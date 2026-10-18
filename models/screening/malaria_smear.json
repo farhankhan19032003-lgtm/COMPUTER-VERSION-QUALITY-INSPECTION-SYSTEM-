@@ -1,0 +1,95 @@
+{
+  "title": "Malaria blood-smear screen",
+  "labels": [
+    "parasitized",
+    "uninfected"
+  ],
+  "concern_labels": [
+    "parasitized"
+  ],
+  "arch": "resnet18",
+  "input_size": 112,
+  "mean": [
+    0.485,
+    0.456,
+    0.406
+  ],
+  "std": [
+    0.229,
+    0.224,
+    0.225
+  ],
+  "multilabel": false,
+  "min_confidence": 0.4,
+  "temperature": 1.0135,
+  "tta": true,
+  "moderate_threshold": 0.631,
+  "high_threshold": 0.681,
+  "threshold_source": "validation: MODERATE for 90% sensitivity, HIGH for 95% specificity (optimistic: re-test on a fresh test set)",
+  "training_data": "NIH Malaria Cell Images (27,558 cell crops; 6,027 used), split by slide. Cell crops from thin smears; research use only.",
+  "min_sharpness": 25.0,
+  "min_brightness": 40.0,
+  "min_side": 50,
+  "validation": {
+    "n_images": 862,
+    "accuracy": 0.9385150812064965,
+    "macro_auc": 0.9853461698012574,
+    "calibration_ece_before": 0.0214,
+    "calibration_ece_after": 0.022,
+    "per_class": {
+      "parasitized": {
+        "n": 419,
+        "sensitivity": 0.9093078758949881,
+        "specificity": 0.9661399548532731,
+        "auc": 0.9853461698012574
+      },
+      "uninfected": {
+        "n": 443,
+        "sensitivity": 0.9661399548532731,
+        "specificity": 0.9093078758949881,
+        "auc": 0.9853461698012574
+      }
+    },
+    "note": "Internal validation split only (the same split chose the checkpoint, temperature and thresholds, so it is optimistic). Not clinical validation: run scripts/evaluate_classifier.py on a locked test set.",
+    "locked_test": {
+      "n_images": 1259,
+      "positives": 625,
+      "negatives": 634,
+      "auc": 0.9910028705610273,
+      "auc_ci95": [
+        0.9851123788108725,
+        0.9955875451986471
+      ],
+      "ece": 0.02685410262217674,
+      "inconclusive_rate": 0.0023828435266084196,
+      "moderate": {
+        "threshold": 0.631,
+        "sensitivity": 0.9552,
+        "sensitivity_ci95": [
+          0.938229457971421,
+          0.97106225451993
+        ],
+        "specificity": 0.9716088328075709,
+        "specificity_ci95": [
+          0.9584647306989864,
+          0.9831037604619175
+        ]
+      },
+      "high": {
+        "threshold": 0.681,
+        "sensitivity": 0.9536,
+        "sensitivity_ci95": [
+          0.9364511215729715,
+          0.9690603818137735
+        ],
+        "specificity": 0.973186119873817,
+        "specificity_ci95": [
+          0.9606299212598425,
+          0.984399375975039
+        ]
+      },
+      "gate": "installed because the lower 95% AUC bound >= 0.7",
+      "note": "Measured on a held-out split of the SAME public dataset. Not clinical validation; accuracy on real patients or other cameras can be far lower."
+    }
+  }
+}

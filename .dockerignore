@@ -1,0 +1,15 @@
+.venv
+.git
+.env
+__pycache__
+*.pyc
+.pytest_cache
+data
+reports
+runs
+models/_staging
+models/product/_*
+*.md
+!README.md
+.claude
+.mcp.json

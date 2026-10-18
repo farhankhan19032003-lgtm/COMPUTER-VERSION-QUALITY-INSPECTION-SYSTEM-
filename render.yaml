@@ -1,0 +1,38 @@
+# Render Blueprint: Dashboard -> New -> Blueprint -> pick this repository. See DEPLOY.md.
+services:
+  - type: web
+    name: visioninspect
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    # The app needs about 730 MB of RAM once every model has been used (YOLO, ResNet50, the anomaly bank and four
+    # screening networks), so the 512 MB plans will be killed. Standard has 2 GB.
+    plan: standard
+    healthCheckPath: /health
+    autoDeploy: false
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: AUTH_REQUIRED
+        value: "true"
+      - key: DEVICE
+        value: cpu
+      - key: LOG_LEVEL
+        value: INFO
+      - key: MAX_UPLOAD_MB
+        value: "10"
+      - key: ALLOW_ANONYMOUS_PATIENTS
+        value: "false"
+      # Replace with your site address after the first deploy, for example https://visioninspect.onrender.com
+      - key: CORS_ORIGINS
+        sync: false
+      # Secrets: type them in the Render dashboard, never commit them.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      - key: SUPABASE_BUCKET
+        sync: false

@@ -1,0 +1,118 @@
+{
+  "title": "Diabetic retinopathy screen",
+  "labels": [
+    "mild",
+    "moderate",
+    "no_dr",
+    "proliferative",
+    "severe"
+  ],
+  "concern_labels": [
+    "moderate",
+    "severe",
+    "proliferative"
+  ],
+  "arch": "resnet18",
+  "input_size": 160,
+  "mean": [
+    0.485,
+    0.456,
+    0.406
+  ],
+  "std": [
+    0.229,
+    0.224,
+    0.225
+  ],
+  "multilabel": false,
+  "min_confidence": 0.4,
+  "temperature": 1.3611,
+  "tta": true,
+  "moderate_threshold": 0.3808,
+  "high_threshold": 0.8017,
+  "threshold_source": "validation: MODERATE for 90% sensitivity, HIGH for 95% specificity (optimistic: re-test on a fresh test set)",
+  "training_data": "Retinal photos graded 0-4 (community mirror, origin not stated); no patient id so test is optimistic",
+  "min_sharpness": 6.8,
+  "min_brightness": 12.9,
+  "min_side": 127,
+  "validation": {
+    "n_images": 444,
+    "accuracy": 0.41216216216216217,
+    "macro_auc": 0.7585202197011144,
+    "calibration_ece_before": 0.095,
+    "calibration_ece_after": 0.0898,
+    "per_class": {
+      "mild": {
+        "n": 68,
+        "sensitivity": 0.3088235294117647,
+        "specificity": 0.8723404255319149,
+        "auc": 0.7340034418022529
+      },
+      "moderate": {
+        "n": 105,
+        "sensitivity": 0.2,
+        "specificity": 0.8495575221238938,
+        "auc": 0.6336002247506672
+      },
+      "no_dr": {
+        "n": 135,
+        "sensitivity": 0.4444444444444444,
+        "specificity": 0.8414239482200647,
+        "auc": 0.754980222941388
+      },
+      "proliferative": {
+        "n": 68,
+        "sensitivity": 0.5441176470588235,
+        "specificity": 0.9281914893617021,
+        "auc": 0.8763297872340425
+      },
+      "severe": {
+        "n": 68,
+        "sensitivity": 0.6470588235294118,
+        "specificity": 0.7712765957446809,
+        "auc": 0.7936874217772215
+      }
+    },
+    "note": "Internal validation split only (the same split chose the checkpoint, temperature and thresholds, so it is optimistic). Not clinical validation: run scripts/evaluate_classifier.py on a locked test set.",
+    "locked_test": {
+      "n_images": 590,
+      "positives": 320,
+      "negatives": 270,
+      "auc": 0.9005877843087146,
+      "auc_ci95": [
+        0.8569175980707477,
+        0.9418050025404132
+      ],
+      "ece": 0.061322353542127256,
+      "inconclusive_rate": 0.5542372881355933,
+      "moderate": {
+        "threshold": 0.3808,
+        "sensitivity": 0.49375,
+        "sensitivity_ci95": [
+          0.4429795164119268,
+          0.5482915604644576
+        ],
+        "specificity": 0.9037037037037037,
+        "specificity_ci95": [
+          0.8661908042457644,
+          0.9382005551700209
+        ]
+      },
+      "high": {
+        "threshold": 0.8017,
+        "sensitivity": 0.446875,
+        "sensitivity_ci95": [
+          0.3911373107801679,
+          0.5015214454576157
+        ],
+        "specificity": 0.9481481481481482,
+        "specificity_ci95": [
+          0.9191150579950289,
+          0.9726693456657088
+        ]
+      },
+      "gate": "installed because the lower 95% AUC bound >= 0.7",
+      "note": "Measured on a held-out split of the SAME public dataset. Not clinical validation; accuracy on real patients or other cameras can be far lower."
+    }
+  }
+}

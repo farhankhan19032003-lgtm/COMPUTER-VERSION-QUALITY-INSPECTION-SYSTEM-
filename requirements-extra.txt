@@ -1,0 +1,8 @@
+# Optional: YOLO detector (recommended), ONNX export and fast CPU inference.
+ultralytics>=8.3
+onnx>=1.16
+onnxruntime>=1.18
+onnxscript>=0.1
+# Dataset adapters (ODIR annotations are an .xlsx file)
+pandas>=2.2
+openpyxl>=3.1

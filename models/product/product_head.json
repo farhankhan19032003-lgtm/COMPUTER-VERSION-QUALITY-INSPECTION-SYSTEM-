@@ -1,0 +1,21 @@
+{
+  "classes": [
+    "headphones",
+    "keyboard",
+    "laptop",
+    "monitor",
+    "mouse",
+    "other",
+    "phone",
+    "tablet",
+    "watch"
+  ],
+  "backbone": "resnet50",
+  "photos": 1742,
+  "held_out_photos": 454,
+  "min_conf": 0.55,
+  "held_out_accuracy": 0.8656387665198237,
+  "named_correctly": 0.7272727272727273,
+  "named_wrongly_of_answers": 0.09019607843137255,
+  "note": "Commons snapshots labelled by search text; held-out = photographers not seen in training. Not a measure of accuracy on your own photos."
+}

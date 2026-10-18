@@ -1,0 +1,95 @@
+{
+  "title": "Chest X-ray pneumonia screen (children)",
+  "labels": [
+    "normal",
+    "pneumonia"
+  ],
+  "concern_labels": [
+    "pneumonia"
+  ],
+  "arch": "resnet18",
+  "input_size": 160,
+  "mean": [
+    0.485,
+    0.456,
+    0.406
+  ],
+  "std": [
+    0.229,
+    0.224,
+    0.225
+  ],
+  "multilabel": false,
+  "min_confidence": 0.4,
+  "temperature": 0.9085,
+  "tta": true,
+  "moderate_threshold": 0.7747,
+  "high_threshold": 0.8247,
+  "threshold_source": "validation: MODERATE for 90% sensitivity, HIGH for 95% specificity (optimistic: re-test on a fresh test set)",
+  "training_data": "Kermany paediatric chest X-rays (CC BY 4.0 mirror); do not apply to adults",
+  "min_sharpness": 25.0,
+  "min_brightness": 40.0,
+  "min_side": 107,
+  "validation": {
+    "n_images": 390,
+    "accuracy": 0.9666666666666667,
+    "macro_auc": 0.9983755685510072,
+    "calibration_ece_before": 0.0347,
+    "calibration_ece_after": 0.0334,
+    "per_class": {
+      "normal": {
+        "n": 162,
+        "sensitivity": 0.9938271604938271,
+        "specificity": 0.9473684210526315,
+        "auc": 0.9983755685510072
+      },
+      "pneumonia": {
+        "n": 228,
+        "sensitivity": 0.9473684210526315,
+        "specificity": 0.9938271604938271,
+        "auc": 0.9983755685510072
+      }
+    },
+    "note": "Internal validation split only (the same split chose the checkpoint, temperature and thresholds, so it is optimistic). Not clinical validation: run scripts/evaluate_classifier.py on a locked test set.",
+    "locked_test": {
+      "n_images": 416,
+      "positives": 205,
+      "negatives": 211,
+      "auc": 0.9966753908184197,
+      "auc_ci95": [
+        0.9928497762081187,
+        0.9990573267417703
+      ],
+      "ece": 0.03147111115208589,
+      "inconclusive_rate": 0.009615384615384616,
+      "moderate": {
+        "threshold": 0.7747,
+        "sensitivity": 0.8780487804878049,
+        "sensitivity_ci95": [
+          0.8309141583054627,
+          0.9210629650041333
+        ],
+        "specificity": 1.0,
+        "specificity_ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      "high": {
+        "threshold": 0.8247,
+        "sensitivity": 0.8585365853658536,
+        "sensitivity_ci95": [
+          0.8078538111896433,
+          0.9040470494417864
+        ],
+        "specificity": 1.0,
+        "specificity_ci95": [
+          1.0,
+          1.0
+        ]
+      },
+      "gate": "installed because the lower 95% AUC bound >= 0.7",
+      "note": "Measured on a held-out split of the SAME public dataset. Not clinical validation; accuracy on real patients or other cameras can be far lower."
+    }
+  }
+}

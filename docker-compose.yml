@@ -1,0 +1,20 @@
+services:
+  api:
+    build:
+      context: .
+      args:
+        TORCH_INDEX: ${TORCH_INDEX:-https://download.pytorch.org/whl/cpu}
+    env_file: .env
+    ports:
+      - "8000:8000"
+    volumes:
+      # Trained weights and anomaly memory banks live outside the image.
+      - ./models:/srv/models
+    restart: unless-stopped
+    # GPU: install the NVIDIA container toolkit, build with a CUDA TORCH_INDEX,
+    # then uncomment:
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - capabilities: [gpu]

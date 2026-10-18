@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.pytest_cache/
+runs/
+# The deployed models ARE committed (about 135 MB: models/anomaly, models/face, models/product, models/screening and
+# yolov8n.pt) so Render can build them into the image. Keep the repository PRIVATE.
+models/_staging/
+models/product/_*/
+models/screening/*.pth
+reports/
+data/*
+!data/products.example.yaml
+.claude/
+.mcp.json

@@ -1,0 +1,1540 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>VisionInspect</title>
+<meta name="theme-color" content="#4f46e5">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%234f46e5'/%3E%3Ccircle cx='16' cy='16' r='4' fill='%23fff'/%3E%3Cpath d='M9 13V9h4M23 13V9h-4M9 19v4h4M23 19v4h-4' fill='none' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;750&display=swap">
+<style>
+  :root{
+    --bg:#f5f6fb; --panel:#fff; --ink:#111827; --muted:#6b7280; --line:#e5e7eb;
+    --accent:#4f46e5; --btn1:#4f46e5; --btn2:#7c3aed; --glow:rgba(99,102,241,.16);
+    --pass:#15803d; --review:#b45309; --fail:#dc2626; --info:#4f46e5;
+    --pass-bg:#dcfce7; --review-bg:#fef3c7; --fail-bg:#fee2e2; --info-bg:#eef2ff;
+    --radius:14px; --shadow:0 1px 2px rgba(17,24,39,.05),0 10px 28px -14px rgba(17,24,39,.14);
+    --ring:0 0 0 3px rgba(79,70,229,.28); --input-bg:#fff; --head-bg:rgba(255,255,255,.82);
+    --side-bg:#0f1226; --side-ink:#c3c8e0; --side-mut:#7a82a8; --side-line:rgba(255,255,255,.08);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0b0d14; --panel:#141824; --ink:#e7e9f0; --muted:#9aa3b5; --line:#242a3a;
+      --accent:#a5b4fc; --btn1:#6366f1; --btn2:#7c3aed; --glow:rgba(129,140,248,.14);
+      --pass:#4ade80; --review:#fbbf24; --fail:#f87171; --info:#a5b4fc;
+      --pass-bg:#10301e; --review-bg:#33260d; --fail-bg:#3a1717; --info-bg:#1b2142;
+      --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 28px -14px rgba(0,0,0,.6); --ring:0 0 0 3px rgba(165,180,252,.3);
+      --input-bg:#0f1320; --head-bg:rgba(20,24,36,.82);
+      --side-bg:#090b15; --side-ink:#b4bad6; --side-mut:#6f7699; --side-line:rgba(255,255,255,.07); }
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;color:var(--ink);font:14px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:radial-gradient(1100px 380px at 50% -120px,var(--glow),transparent 70%),var(--bg);min-height:100vh}
+  :focus-visible{outline:none;box-shadow:var(--ring);border-radius:8px}
+  .brand{display:flex;align-items:center;gap:10px}
+  .logo{width:30px;height:30px;flex:none;filter:drop-shadow(0 4px 8px rgba(99,102,241,.35))}
+  h1{font-size:17px;margin:0;font-weight:700;letter-spacing:-.02em}
+  .ic{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+  /* ---- app shell: sidebar + top bar ---- */
+  .shell{display:grid;grid-template-columns:248px minmax(0,1fr);min-height:100vh}
+  .side{position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:4px;padding:18px 14px;background:var(--side-bg);color:var(--side-ink);
+    border-right:1px solid var(--side-line);z-index:40}
+  .side .brand{padding:4px 8px 14px}
+  .side h1{color:#fff;font-size:16px}
+  nav{display:flex;flex-direction:column;gap:2px;flex:1;overflow:auto}
+  nav .grp{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--side-mut);padding:16px 10px 6px;font-weight:650}
+  nav button{display:flex;align-items:center;gap:11px;width:100%;text-align:left;background:none;border:0;padding:9px 11px;border-radius:10px;color:var(--side-ink);
+    font:inherit;font-weight:500;cursor:pointer;transition:background .12s,color .12s}
+  nav button .ic{opacity:.75}
+  nav button:hover{background:rgba(255,255,255,.06);color:#fff}
+  nav button.on{background:rgba(129,140,248,.2);color:#fff;font-weight:600}
+  nav button.on .ic{opacity:1;color:#a5b4fc}
+  nav button:focus-visible{box-shadow:inset 0 0 0 2px rgba(165,180,252,.6)}
+  .side-foot{border-top:1px solid var(--side-line);padding-top:12px}
+  .content{min-width:0}
+  .topbar{display:flex;align-items:center;gap:14px;padding:13px 32px;position:sticky;top:0;z-index:20;background:var(--head-bg);
+    backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid var(--line)}
+  .topbar h2{margin:0;font-size:19px;font-weight:700;letter-spacing:-.02em}
+  .topbar .spacer{flex:1}
+  .burger{display:none;width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;place-items:center}
+  .scrim{display:none}
+  main{max-width:1240px;margin:0 auto;padding:26px 32px 80px}
+  .pill{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;padding:5px 12px;border-radius:99px;font-size:12.5px;font-weight:600;background:var(--info-bg);color:var(--accent)}
+  .pill::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+  .pill.p-ok{background:var(--pass-bg);color:var(--pass)}
+  .pill.p-warn{background:var(--review-bg);color:var(--review)}
+  .pill.p-err{background:var(--fail-bg);color:var(--fail)}
+  .grid{display:grid;gap:16px}
+  .kpis{grid-template-columns:repeat(auto-fit,minmax(138px,1fr))}
+  .two{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow)}
+  .card h2{font-size:12px;margin:0 0 12px;color:var(--muted);font-weight:650;text-transform:uppercase;letter-spacing:.06em}
+  .kpi .v{font-size:28px;font-weight:700;letter-spacing:-.03em;line-height:1.2}
+  .kpi .s{color:var(--muted);font-size:12px}
+  .badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:650}
+  .PASS,.LOW,.GOOD{background:var(--pass-bg);color:var(--pass)}
+  .REVIEW,.MODERATE,.WARNING,.FAIR{background:var(--review-bg);color:var(--review)}
+  .FAIL,.HIGH,.ERROR,.POOR,.UNSAFE{background:var(--fail-bg);color:var(--fail)}
+  .INFO,.INCONCLUSIVE,.INSUFFICIENT_DATA{background:var(--info-bg);color:var(--info)}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top}
+  th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em}
+  tr:last-child td{border-bottom:0}
+  tbody tr:hover td,table tr:hover td{background:color-mix(in srgb,var(--info-bg) 55%,transparent)}
+  .muted{color:var(--muted)}
+  a{color:var(--accent);text-underline-offset:2px}
+  .drop{border:2px dashed var(--line);border-radius:var(--radius);padding:30px;text-align:center;color:var(--muted);cursor:pointer;transition:border-color .15s,background .15s}
+  .drop:hover{border-color:var(--accent);background:var(--info-bg)}
+  .drop.over{border-color:var(--accent);background:var(--info-bg)}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+  select,input[type=email],input[type=password],input[type=text]{font:inherit;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--input-bg);color:var(--ink)}
+  select:focus,input:focus{outline:none;border-color:var(--accent);box-shadow:var(--ring)}
+  select.fb{padding:4px 8px;font-size:12px;border-radius:8px;max-width:180px}
+  button.btn{font:inherit;padding:8px 16px;border-radius:10px;border:1px solid transparent;background:linear-gradient(135deg,var(--btn1),var(--btn2));color:#fff;cursor:pointer;font-weight:600;
+    box-shadow:0 6px 14px -8px rgba(79,70,229,.7);transition:filter .15s,transform .05s}
+  button.btn:hover{filter:brightness(1.08)}
+  button.btn:active{transform:translateY(1px)}
+  button.btn.ghost{background:none;color:var(--accent);border-color:color-mix(in srgb,var(--accent) 45%,var(--line));box-shadow:none}
+  button.btn.ghost:hover{background:var(--info-bg);filter:none}
+  button.btn:disabled{opacity:.55;cursor:default;filter:none}
+  button.btn.small{padding:6px 14px;font-size:13px}
+  img.out,video,canvas.hid{max-width:100%;border-radius:10px;border:1px solid var(--line)}
+  canvas.hid{display:none}
+  .warn{padding:10px 14px;border-radius:10px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start}
+  .bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+  .bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--btn1),var(--btn2))}
+  .disc{background:var(--review-bg);color:var(--review);padding:11px 14px;border-radius:10px;margin-bottom:14px;font-weight:550}
+  .hidden{display:none!important}
+  .stage{position:relative;display:inline-block;max-width:100%}
+  .stage video{display:block;transform:scaleX(-1)}
+  .oval{position:absolute;left:28%;top:14%;width:44%;height:72%;border:3px dashed rgba(255,255,255,.85);border-radius:50%;box-shadow:0 0 0 9999px rgba(0,0,0,.25);pointer-events:none}
+  .bpm{font-size:54px;font-weight:700;letter-spacing:-.03em;line-height:1}
+  .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+  label.f{display:grid;gap:3px;font-size:12px;color:var(--muted)}
+  label.f input,label.f select{font:inherit;padding:8px 10px;border-radius:10px;border:1px solid var(--line);background:var(--input-bg);color:var(--ink);width:100%;box-sizing:border-box;min-width:0}
+  #pModule{max-width:100%;width:100%}
+  .chips{display:flex;flex-wrap:wrap;gap:6px 14px;margin:8px 0 12px}
+  .chips label{display:flex;gap:5px;align-items:center;font-size:13px}
+  ul.tight{margin:4px 0 8px 18px;padding:0}
+  .chart{position:relative;height:230px}
+  @media(max-width:600px){main{padding:14px 12px 50px} header{padding:10px 14px}}
+
+  /* ---- user menu (sidebar footer) ---- */
+  .usermenu{position:relative}
+  .userrow{display:flex;align-items:center;gap:10px;width:100%;background:none;border:0;padding:8px;border-radius:12px;cursor:pointer;color:var(--side-ink);font:inherit;text-align:left}
+  .userrow:hover{background:rgba(255,255,255,.06)}
+  .userrow .who2{display:grid;min-width:0;flex:1}
+  .userrow strong{color:#fff;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .userrow small{color:var(--side-mut);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--btn1),var(--btn2));color:#fff;font-weight:700;font-size:13px;
+    display:grid;place-items:center;overflow:hidden;flex:none}
+  .avatar img{width:100%;height:100%;object-fit:cover;border:0;border-radius:0}
+  .menu{position:absolute;left:0;right:0;bottom:calc(100% + 8px);background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:6px;z-index:50}
+  .menu .who{padding:10px 12px;display:grid;gap:2px;border-bottom:1px solid var(--line);margin-bottom:6px;word-break:break-all}
+  .menu .chip{justify-self:start;margin-top:4px;font-size:11px;padding:1px 8px;border-radius:99px;background:var(--info-bg);color:var(--accent);font-weight:600}
+  .menu button{width:100%;text-align:left;background:none;border:0;padding:9px 12px;border-radius:8px;color:var(--ink);font:inherit;cursor:pointer}
+  .menu button:hover{background:var(--info-bg)}
+
+  /* ---- sign in / create account ---- */
+  body.signed-out .shell{display:none}
+  body:not(.signed-out) #auth{display:none}
+  .auth{min-height:100vh;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}
+  .auth-hero{position:relative;overflow:hidden;color:#fff;padding:48px 56px;display:flex;flex-direction:column;justify-content:space-between;
+    background:radial-gradient(900px 500px at 10% 0%,rgba(255,255,255,.18),transparent 60%),radial-gradient(700px 500px at 100% 100%,rgba(56,189,248,.35),transparent 60%),linear-gradient(145deg,#312e81,#5b21b6 55%,#4338ca)}
+  .auth-hero::before,.auth-hero::after{content:"";position:absolute;border-radius:50%;border:1px solid rgba(255,255,255,.14);pointer-events:none}
+  .auth-hero::before{width:520px;height:520px;right:-170px;top:-120px}
+  .auth-hero::after{width:360px;height:360px;left:-110px;bottom:-120px}
+  .auth-hero .brand{position:relative;z-index:1}
+  .auth-hero h1{font-size:19px}
+  .hero-main{position:relative;z-index:1;max-width:460px}
+  .hero-main h2{font-size:38px;line-height:1.12;letter-spacing:-.03em;margin:0 0 14px;font-weight:750}
+  .hero-main p{font-size:16px;color:rgba(255,255,255,.82);margin:0 0 28px}
+  .feat{display:grid;gap:16px;margin:0;padding:0;list-style:none}
+  .feat li{display:flex;gap:14px;align-items:flex-start}
+  .feat .ic{flex:none;width:38px;height:38px;border-radius:11px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);display:grid;place-items:center}
+  .feat strong{display:block;font-size:14.5px}
+  .feat span{color:rgba(255,255,255,.75);font-size:13px}
+  .hero-foot{position:relative;z-index:1;font-size:12px;color:rgba(255,255,255,.7);max-width:460px}
+  .auth-pane{display:grid;place-items:center;padding:32px 20px}
+  .auth-card{width:min(420px,100%)}
+  .auth-card .mobile-brand{display:none;margin-bottom:22px}
+  .auth-card h2{font-size:26px;letter-spacing:-.025em;margin:0 0 6px;font-weight:750;text-transform:none;color:var(--ink)}
+  .auth-sub{color:var(--muted);margin:0 0 22px}
+  .social{display:grid;gap:10px;margin-bottom:18px}
+  .social button{display:flex;align-items:center;justify-content:center;gap:11px;width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--panel);
+    color:var(--ink);font:inherit;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s,transform .05s}
+  .social button:hover{background:var(--info-bg);border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+  .social button:active{transform:translateY(1px)}
+  .social svg{width:20px;height:20px;flex:none}
+  .social .gh svg{fill:var(--ink)}
+  .social .off{opacity:.62}
+  .social .ph svg{color:var(--ink)}
+  .otp{text-align:center;font-size:24px!important;letter-spacing:.5em;font-weight:650;padding-left:calc(13px + .5em)!important}
+  .social .tag{font-size:11px;font-weight:600;padding:1px 8px;border-radius:99px;background:var(--review-bg);color:var(--review)}
+  .divider{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12px;margin:2px 0 18px;text-transform:uppercase;letter-spacing:.06em}
+  .divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+  .auth-form{display:grid;gap:15px}
+  .fld{display:grid;gap:6px}
+  .fld>label,.fld>.lbl{font-size:13px;font-weight:600;display:flex;justify-content:space-between;align-items:center}
+  .fld input{width:100%;padding:11px 13px;border-radius:12px;font-size:15px}
+  .fld input.bad{border-color:var(--fail);box-shadow:0 0 0 3px color-mix(in srgb,var(--fail) 22%,transparent)}
+  .pw{position:relative}
+  .pw input{padding-right:46px}
+  .eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:0;background:none;color:var(--muted);cursor:pointer;border-radius:8px;display:grid;place-items:center}
+  .eye:hover{color:var(--ink);background:var(--info-bg)}
+  .eye svg{width:19px;height:19px}
+  .strength{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:2px}
+  .strength i{height:5px;border-radius:3px;background:var(--line);transition:background .2s}
+  .strength[data-s="1"] i:nth-child(-n+1){background:var(--fail)}
+  .strength[data-s="2"] i:nth-child(-n+2){background:var(--review)}
+  .strength[data-s="3"] i:nth-child(-n+3){background:#84cc16}
+  .strength[data-s="4"] i{background:var(--pass)}
+  .hint{font-size:12px;color:var(--muted);min-height:16px}
+  .check{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--muted)}
+  .check input{margin-top:3px;width:16px;height:16px;accent-color:var(--btn1)}
+  .linkbtn{background:none;border:0;padding:0;color:var(--accent);font:inherit;font-weight:600;cursor:pointer}
+  .linkbtn:hover{text-decoration:underline}
+  .linkbtn:disabled{color:var(--muted);cursor:default;text-decoration:none}
+  .submit{width:100%;padding:12px 16px;font-size:15px;border-radius:12px;display:flex;align-items:center;justify-content:center;gap:9px}
+  .spin{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;animation:sp .7s linear infinite}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .alert{padding:11px 14px;border-radius:12px;font-size:13.5px;display:none}
+  .alert.show{display:block}
+  .alert.err{background:var(--fail-bg);color:var(--fail)}
+  .alert.ok{background:var(--pass-bg);color:var(--pass)}
+  .alert.info{background:var(--info-bg);color:var(--accent)}
+  .switch{text-align:center;color:var(--muted);margin-top:20px;font-size:14px}
+  .envelope{width:64px;height:64px;border-radius:18px;background:var(--info-bg);color:var(--accent);display:grid;place-items:center;margin:0 0 18px}
+  .envelope svg{width:30px;height:30px}
+  .guest{text-align:center;margin-top:14px;font-size:13px}
+  .legal{font-size:12px;color:var(--muted);text-align:center;margin-top:22px}
+  @media(max-width:900px){
+    .auth{grid-template-columns:1fr}
+    .auth-hero{display:none}
+    .auth-card .mobile-brand{display:flex}
+  }
+
+
+  /* ---- overview ---- */
+  .kpis{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+  .kpi{display:flex;flex-direction:column;gap:4px;position:relative;padding:18px 20px}
+  .kpi h2{margin:0}
+  .kpi .v{font-size:30px;font-weight:700;letter-spacing:-.03em;line-height:1.15}
+  .kpi .s{color:var(--muted);font-size:12px;min-height:16px}
+  .kpi .ico{position:absolute;right:16px;top:16px;width:36px;height:36px;border-radius:11px;display:grid;place-items:center}
+  .tone-pass .ico{background:var(--pass-bg);color:var(--pass)}
+  .tone-review .ico{background:var(--review-bg);color:var(--review)}
+  .tone-fail .ico{background:var(--fail-bg);color:var(--fail)}
+  .tone-info .ico{background:var(--info-bg);color:var(--accent)}
+  .g-main{display:grid;gap:16px;margin-top:16px;grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+  .g-main.g-rev{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}
+  #warnings:not(:empty){margin-bottom:16px}
+  .sys td{padding:7px 0;border-bottom:1px solid var(--line)}
+  .sys tr:last-child td{border-bottom:0}
+  .sys td:first-child{color:var(--muted);width:42%}
+  .empty{padding:14px 0}
+  .detect{margin:-4px 0 10px;font-size:13px}
+  .warn-line{color:var(--review);font-weight:600}
+  hr{border:0;border-top:1px solid var(--line);margin:16px 0}
+  code{background:var(--info-bg);color:var(--accent);padding:1px 6px;border-radius:6px;font-size:12.5px}
+  .drop .up{width:26px;height:26px;margin:0 auto 6px;color:var(--accent)}
+
+  /* ---- live vitals ---- */
+  .bpm{font-size:64px;font-weight:750;letter-spacing:-.04em;line-height:1}
+  .bpm .unit{font-size:18px;color:var(--muted);font-weight:600;letter-spacing:0}
+  .vital .vtop{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .zone{display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:99px;font-weight:700;font-size:15px}
+  .zone.normal{background:var(--pass-bg);color:var(--pass)}
+  .zone.caution{background:var(--review-bg);color:var(--review)}
+  .zone.danger{background:var(--fail-bg);color:var(--fail);animation:zp 1.4s ease-in-out infinite}
+  @keyframes zp{50%{box-shadow:0 0 0 7px color-mix(in srgb,var(--fail) 20%,transparent)}}
+  .scalewrap{position:relative;padding-top:34px;margin-top:6px}
+  .scale{display:flex;height:12px;border-radius:99px;overflow:hidden}
+  .scale i{display:block;height:100%}
+  .marker{position:absolute;top:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;transition:left .45s ease}
+  .marker b{font-size:12px;background:var(--ink);color:var(--panel);padding:1px 8px;border-radius:7px}
+  .marker::after{content:"";width:2px;height:13px;background:var(--ink);margin-top:2px}
+  .ticks{position:relative;height:18px;font-size:11px;color:var(--muted);margin-top:4px}
+  .ticks span{position:absolute;transform:translateX(-50%)}
+  .alert-danger{background:var(--fail-bg);color:var(--fail);padding:12px 14px;border-radius:12px;font-weight:600;margin:14px 0 4px}
+  .chips-h{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+  .chips-h span{padding:2px 10px;border-radius:99px;font-size:12px;font-weight:650}
+  .chips-h .normal{background:var(--pass-bg);color:var(--pass)}
+  .chips-h .caution{background:var(--review-bg);color:var(--review)}
+  .chips-h .danger{background:var(--fail-bg);color:var(--fail)}
+
+  @media(max-width:1000px){.g-main,.g-main.g-rev{grid-template-columns:minmax(0,1fr)}}
+  @media(max-width:900px){
+    .shell{grid-template-columns:minmax(0,1fr)}
+    .side{position:fixed;left:0;top:0;bottom:0;width:264px;transform:translateX(-104%);transition:transform .2s ease}
+    .side.open{transform:none;box-shadow:0 0 50px rgba(0,0,0,.45)}
+    .scrim.show{display:block;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:35}
+    .burger{display:grid}
+    .topbar{padding:11px 16px}
+    main{padding:18px 14px 64px}
+  }
+
+  .eye .slash{display:none}.eye.on .slash{display:block}
+  body.booting .shell,body.booting #auth{display:none}
+</style>
+</head>
+<body class="booting">
+<!-- ================= SIGN IN / CREATE ACCOUNT ================= -->
+<div id="auth" class="auth">
+  <aside class="auth-hero">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="9" fill="#fff" fill-opacity=".16" stroke="#fff" stroke-opacity=".35"/><path d="M9 13V9h4M23 13V9h-4M9 19v4h4M23 19v4h-4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="16" r="3.2" fill="#fff"/></svg>
+      <h1>VisionInspect</h1>
+    </div>
+    <div class="hero-main">
+      <h2>Catch what the eye misses.</h2>
+      <p>Computer-vision quality inspection for phones, laptops and more, with a reviewer in the loop.</p>
+      <ul class="feat">
+        <li><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg></div>
+          <div><strong>PASS / REVIEW / FAIL in seconds</strong><span>Cracks, scratches and anything that looks different from known-good units.</span></div></li>
+        <li><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 3v6c0 5-3.5 9-8 11-4.5-2-8-6-8-11V5l8-3z"/><path d="M9 12l2 2 4-4"/></svg></div>
+          <div><strong>Your data stays yours</strong><span>Private storage and row-level security: you only ever see your own records.</span></div></li>
+        <li><div class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></div>
+          <div><strong>Reviewer feedback built in</strong><span>Confirm or correct verdicts and see how often the model is right.</span></div></li>
+      </ul>
+    </div>
+    <div class="hero-foot">An inspection aid. Health-screening features are for research and education and are not a medical diagnosis.</div>
+  </aside>
+
+  <section class="auth-pane">
+    <div class="auth-card">
+      <div class="brand mobile-brand">
+        <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="lgm" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366f1"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#lgm)"/><path d="M9 13V9h4M23 13V9h-4M9 19v4h4M23 19v4h-4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="16" r="3.2" fill="#fff"/></svg>
+        <h1>VisionInspect</h1>
+      </div>
+      <h2 id="authTitle">Welcome back</h2>
+      <p class="auth-sub" id="authSub">Sign in to continue to your dashboard.</p>
+
+      <!-- social buttons (signin + signup) -->
+      <div id="socialBox">
+        <div class="social">
+          <button type="button" class="gg" data-provider="google"><svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg><span class="lab">Continue with Google</span></button>
+          <button type="button" class="gh" data-provider="github"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span class="lab">Continue with GitHub</span></button>
+          <button type="button" class="ph" id="phoneBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18h2"/></svg><span class="lab">Continue with phone number</span></button>
+        </div>
+        <div class="alert info" id="socialMsg" role="status"></div>
+        <div class="divider" id="orDivider">or continue with email</div>
+      </div>
+
+      <!-- sign in -->
+      <form class="auth-form" data-view="signin" id="fSignin" novalidate>
+        <div class="fld"><label for="siEmail">Email</label>
+          <input id="siEmail" type="email" autocomplete="username" placeholder="you@company.com" required></div>
+        <div class="fld"><label for="siPw"><span>Password</span><button type="button" class="linkbtn" data-go="forgot">Forgot password?</button></label>
+          <div class="pw"><input id="siPw" type="password" autocomplete="current-password" placeholder="Your password" required>
+            <button type="button" class="eye" data-for="siPw" aria-label="Show password"></button></div></div>
+        <div class="alert err" id="siMsg" role="alert"></div>
+        <button class="btn submit" type="submit"><span class="t">Sign in</span></button>
+        <div class="switch">New to VisionInspect? <button type="button" class="linkbtn" data-go="signup">Create an account</button></div>
+      </form>
+
+      <!-- create account -->
+      <form class="auth-form hidden" data-view="signup" id="fSignup" novalidate>
+        <div class="fld"><label for="suName">Full name</label>
+          <input id="suName" type="text" autocomplete="name" placeholder="Your name" maxlength="80" required></div>
+        <div class="fld"><label for="suEmail">Work or personal email</label>
+          <input id="suEmail" type="email" autocomplete="email" placeholder="you@company.com" required></div>
+        <div class="fld"><label for="suPw">Password</label>
+          <div class="pw"><input id="suPw" type="password" autocomplete="new-password" placeholder="At least 8 characters" required>
+            <button type="button" class="eye" data-for="suPw" aria-label="Show password"></button></div>
+          <div class="strength" id="suStrength" data-s="0"><i></i><i></i><i></i><i></i></div>
+          <div class="hint" id="suHint">Use 8+ characters with letters and numbers.</div></div>
+        <div class="fld"><label for="suPw2">Confirm password</label>
+          <div class="pw"><input id="suPw2" type="password" autocomplete="new-password" placeholder="Type it again" required>
+            <button type="button" class="eye" data-for="suPw2" aria-label="Show password"></button></div>
+          <div class="hint" id="suMatch"></div></div>
+        <label class="check"><input type="checkbox" id="suTerms"><span>I understand VisionInspect is an inspection and screening aid, not a medical device, and its results are not a diagnosis.</span></label>
+        <div class="alert err" id="suMsg" role="alert"></div>
+        <button class="btn submit" type="submit"><span class="t">Create account</span></button>
+        <div class="switch">Already have an account? <button type="button" class="linkbtn" data-go="signin">Sign in</button></div>
+      </form>
+
+      <!-- forgot password -->
+      <form class="auth-form hidden" data-view="forgot" id="fForgot" novalidate>
+        <div class="fld"><label for="fgEmail">Email</label>
+          <input id="fgEmail" type="email" autocomplete="username" placeholder="you@company.com" required></div>
+        <div class="alert err" id="fgMsg" role="alert"></div>
+        <button class="btn submit" type="submit"><span class="t">Send reset link</span></button>
+        <div class="switch"><button type="button" class="linkbtn" data-go="signin">&larr; Back to sign in</button></div>
+      </form>
+
+      <!-- phone number: send a code, then verify it (this signs in existing users and creates new ones) -->
+      <form class="auth-form hidden" data-view="phone" id="fPhone" novalidate>
+        <div class="fld"><label for="phNum">Mobile number</label>
+          <input id="phNum" type="tel" inputmode="tel" autocomplete="tel" placeholder="+91 98765 43210" value="+91 " required>
+          <div class="hint">Include the country code. New here? Your account is created once you confirm the code.</div></div>
+        <div class="alert err" id="phMsg" role="alert"></div>
+        <button class="btn submit" type="submit"><span class="t">Send code</span></button>
+        <div class="switch"><button type="button" class="linkbtn" data-go="signin">&larr; Use email instead</button></div>
+      </form>
+      <form class="auth-form hidden" data-view="otp" id="fOtp" novalidate>
+        <div class="fld"><label for="otpCode">6-digit code</label>
+          <input id="otpCode" class="otp" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="······" required>
+          <div class="hint" id="otpHint"></div></div>
+        <div class="alert err" id="otpMsg" role="alert"></div>
+        <button class="btn submit" type="submit"><span class="t">Verify and continue</span></button>
+        <div class="switch">Didn't get it? <button type="button" class="linkbtn" id="otpResend">resend the code</button></div>
+        <div class="switch" style="margin-top:6px"><button type="button" class="linkbtn" data-go="phone">&larr; Change number</button></div>
+      </form>
+
+      <!-- set a new password (after the reset link) -->
+      <form class="auth-form hidden" data-view="reset" id="fReset" novalidate>
+        <div class="fld"><label for="rsPw">New password</label>
+          <div class="pw"><input id="rsPw" type="password" autocomplete="new-password" placeholder="At least 8 characters" required>
+            <button type="button" class="eye" data-for="rsPw" aria-label="Show password"></button></div>
+          <div class="strength" id="rsStrength" data-s="0"><i></i><i></i><i></i><i></i></div></div>
+        <div class="fld"><label for="rsPw2">Confirm new password</label>
+          <div class="pw"><input id="rsPw2" type="password" autocomplete="new-password" placeholder="Type it again" required>
+            <button type="button" class="eye" data-for="rsPw2" aria-label="Show password"></button></div></div>
+        <div class="alert err" id="rsMsg" role="alert"></div>
+        <button class="btn submit" type="submit"><span class="t">Update password</span></button>
+      </form>
+
+      <!-- check your email -->
+      <div class="auth-form hidden" data-view="check" id="vCheck">
+        <div class="envelope"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M3 8l9 6 9-6"/></svg></div>
+        <div class="alert ok show" id="ckText"></div>
+        <div class="alert err" id="ckMsg" role="alert"></div>
+        <div class="switch" style="margin-top:4px">Didn't get it? Check spam, or
+          <button type="button" class="linkbtn" id="ckResend">resend the email</button></div>
+        <div class="switch" style="margin-top:6px"><button type="button" class="linkbtn" data-go="signin">&larr; Back to sign in</button></div>
+      </div>
+
+      <div class="guest hidden" id="guestLink"><button type="button" class="linkbtn" id="guestBtn">Continue without signing in</button></div>
+      <div class="legal">Protected by Supabase Auth. Your password is never stored by VisionInspect.</div>
+    </div>
+  </section>
+</div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.6"/><rect x="14" y="3" width="7" height="7" rx="1.6"/><rect x="3" y="14" width="7" height="7" rx="1.6"/><rect x="14" y="14" width="7" height="7" rx="1.6"/></symbol>
+  <symbol id="i-scan" viewBox="0 0 24 24"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20.5s-7.5-4.7-9.4-9.4A5.3 5.3 0 0 1 12 6.4a5.3 5.3 0 0 1 9.4 4.7c-1.9 4.7-9.4 9.4-9.4 9.4z"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h6"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18h2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M7 15l5-5 5 5"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></symbol>
+</defs></svg>
+
+<div class="shell">
+  <aside class="side" id="side">
+    <div class="brand">
+      <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="lgh" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6366f1"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs><rect width="32" height="32" rx="9" fill="url(#lgh)"/><path d="M9 13V9h4M23 13V9h-4M9 19v4h4M23 19v4h-4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="16" cy="16" r="3.2" fill="#fff"/></svg>
+      <h1>VisionInspect</h1>
+    </div>
+    <nav id="nav" aria-label="Main">
+      <button data-tab="overview" class="on"><svg class="ic"><use href="#i-grid"/></svg><span>Overview</span></button>
+      <div class="grp">Products</div>
+      <button data-tab="inspect"><svg class="ic"><use href="#i-scan"/></svg><span>Inspect</span></button>
+      <button data-tab="history"><svg class="ic"><use href="#i-clock"/></svg><span>History</span></button>
+      <button data-tab="phone"><svg class="ic"><use href="#i-phone"/></svg><span>Phone health</span></button>
+      <div class="grp">Health</div>
+      <button data-tab="vitals"><svg class="ic"><use href="#i-pulse"/></svg><span>Live vitals</span></button>
+      <button data-tab="screen"><svg class="ic"><use href="#i-heart"/></svg><span>Screening</span></button>
+      <button data-tab="patient"><svg class="ic"><use href="#i-doc"/></svg><span>Patient report</span></button>
+    </nav>
+    <div class="side-foot">
+      <button class="btn small hidden" id="signInBtn" type="button" style="width:100%">Sign in</button>
+      <div class="usermenu hidden" id="userMenu">
+        <button class="userrow" id="avatarBtn" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Account menu">
+          <span class="avatar"><span id="avatarTxt"></span><img id="avatarImg" class="hidden" alt="" referrerpolicy="no-referrer"></span>
+          <span class="who2"><strong id="sName"></strong><small id="sEmail"></small></span>
+          <svg class="ic" style="width:16px;height:16px;opacity:.6"><use href="#i-chev"/></svg>
+        </button>
+        <div class="menu hidden" id="menuPanel" role="menu">
+          <div class="who"><strong id="mName"></strong><span class="muted" id="mEmail"></span><span class="chip" id="mProv"></span></div>
+          <button type="button" role="menuitem" id="signOutBtn">Sign out</button>
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <div class="content">
+    <header class="topbar">
+      <button class="burger" id="burger" type="button" aria-label="Open menu"><svg class="ic"><use href="#i-menu"/></svg></button>
+      <h2 id="pageTitle">Overview</h2>
+      <span class="spacer"></span>
+      <span class="pill hidden" id="sysPill"></span>
+    </header>
+
+<main>
+<!-- ============ OVERVIEW ============ -->
+<section id="tab-overview">
+  <div id="warnings"></div>
+  <div class="grid kpis" id="kpis"></div>
+  <div class="g-main">
+    <div class="card"><h2>Inspections per day</h2><div class="chart"><canvas id="chDaily"></canvas></div></div>
+    <div class="card"><h2>Defects found</h2><div class="chart"><canvas id="chDefects"></canvas></div></div>
+  </div>
+  <div class="g-main">
+    <div class="card"><h2>Recent inspections</h2><div id="recent"></div></div>
+    <div class="card"><h2>System</h2><div id="edge"></div></div>
+  </div>
+  <div class="g-main g-rev">
+    <div class="card"><h2>By product</h2><div id="byProduct"></div></div>
+    <div class="card"><h2>Events</h2><div id="events"></div></div>
+  </div>
+</section>
+
+<!-- ============ INSPECT ============ -->
+<section id="tab-inspect" class="hidden">
+  <div class="grid two">
+    <div class="card">
+      <h2>Photo</h2>
+      <div class="row">
+        <label class="f" style="min-width:180px">Product <select id="product">
+          <option value="">Auto-detect</option><option>phone</option><option>laptop</option><option>watch</option>
+          <option>tablet</option><option>monitor</option><option>keyboard</option><option>headphones</option>
+        </select></label>
+      </div>
+      <div class="drop" id="drop"><svg class="ic up"><use href="#i-upload"/></svg><div>Drop a photo or click to choose</div><input type="file" id="file" accept="image/*" hidden></div>
+      <p class="muted">Even light, in focus, product fills the frame.</p>
+      <hr>
+      <h2>Live camera</h2>
+      <div class="row">
+        <button class="btn" id="camStart">Start camera</button>
+        <button class="btn ghost hidden" id="camStop">Stop</button>
+        <span id="camStatus" class="muted"></span>
+      </div>
+      <video id="video" playsinline muted class="hidden"></video>
+      <canvas id="grab" class="hid"></canvas>
+    </div>
+    <div class="card"><h2>Result</h2><div id="inspectOut" class="muted empty">No result yet.</div></div>
+  </div>
+</section>
+
+<!-- ============ PATIENT REPORT ============ -->
+<section id="tab-patient" class="hidden">
+  <div class="disc">Screening aid, not a diagnosis. Some checks need special devices (retina camera, X-ray).</div>
+  <div class="grid two">
+    <div class="card">
+      <h2>Patient</h2>
+      <div class="grid2">
+        <label class="f">Name<input id="pName" maxlength="120" autocomplete="off"></label>
+        <label class="f">Age<input id="pAge" type="number" min="0" max="130"></label>
+        <label class="f">Sex<select id="pSex"><option value="unknown">Not stated</option><option value="female">Female</option><option value="male">Male</option><option value="other">Other</option></select></label>
+        <label class="f">Patient ID<input id="pRef" maxlength="60" autocomplete="off"></label>
+        <label class="f">Skin type (Fitzpatrick)<select id="pSkin"><option value="unknown">Unknown</option><option>I</option><option>II</option><option>III</option><option>IV</option><option>V</option><option>VI</option></select></label>
+        <label class="f">Clinic / operator<input id="pOp" maxlength="120" autocomplete="off"></label>
+      </div>
+      <label class="f" style="margin-top:8px">Symptoms (comma separated)<input id="pSym" maxlength="300" placeholder="e.g. blurred vision, tiredness"></label>
+      <div class="chips" style="flex-direction:column;gap:6px">
+        <label><input type="checkbox" id="pConsent"> Patient (or guardian) consents to this screening.</label>
+        <label><input type="checkbox" id="pSave"> Save this patient record (needs sign-in; can be deleted)</label>
+      </div>
+      <div class="muted" id="pRecord"></div>
+    </div>
+    <div class="card">
+      <h2>Add a check</h2>
+      <div class="row"><label class="f" style="flex:1;min-width:200px">Check<select id="pModule"></select></label>
+        <label><input type="checkbox" id="pExplain" checked> Heat-map</label></div>
+      <p class="muted" id="pHint"></p>
+      <div class="drop" id="pDrop"><svg class="ic up"><use href="#i-upload"/></svg><div>Choose or drop an image</div><input type="file" id="pFile" accept="image/*" hidden></div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn ghost" id="pCamStart">Use camera</button>
+        <button class="btn hidden" id="pCamTake">Capture</button>
+        <button class="btn ghost hidden" id="pCamStop">Cancel</button>
+      </div>
+      <video id="pVideo" playsinline muted class="hidden"></video>
+      <canvas id="pCanvas" class="hid"></canvas>
+      <div class="muted" id="pMsg"></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h2>Results</h2>
+    <div id="pFindings" class="muted empty">No checks yet.</div>
+    <label style="display:block;margin-top:8px"><input type="checkbox" id="pVitals" disabled> Include last pulse reading <span class="muted" id="pVitalsTxt">(measure it in Live vitals first)</span></label>
+    <div class="row" style="margin-top:12px">
+      <button class="btn" id="pReport" disabled>Generate PDF report</button>
+      <button class="btn ghost" id="pSample">Sample report</button>
+      <button class="btn ghost" id="pReset">New patient</button>
+    </div>
+    <div id="pReportOut" class="muted"></div>
+  </div>
+</section>
+
+<!-- ============ SCREENING ============ -->
+<section id="tab-screen" class="hidden">
+  <div class="disc" id="disc">Screening aid, not a diagnosis.</div>
+  <div class="grid two">
+    <div class="card">
+      <h2>Image screening</h2>
+      <div class="row">
+        <label class="f" style="flex:1;min-width:200px">Module <select id="module"></select></label>
+        <label><input type="checkbox" id="explain" checked> Show heat-map</label>
+      </div>
+      <div class="drop" id="drop2"><svg class="ic up"><use href="#i-upload"/></svg><div>Drop an image or click to choose</div><input type="file" id="file2" accept="image/*" hidden></div>
+      <p class="muted" id="moduleHint"></p>
+      <div class="row">
+        <button class="btn ghost" id="snapStart">Use camera</button>
+        <button class="btn hidden" id="snapTake">Capture</button>
+        <button class="btn ghost hidden" id="snapStop">Cancel</button>
+      </div>
+      <video id="snapVideo" playsinline muted class="hidden"></video>
+      <canvas id="snapCanvas" class="hid"></canvas>
+    </div>
+    <div class="card"><h2>Result</h2><div id="screenOut" class="muted empty">No result yet.</div></div>
+  </div>
+</section>
+
+<!-- ============ PHONE HEALTH ============ -->
+<section id="tab-phone" class="hidden">
+  <div class="grid two">
+    <div class="card">
+      <h2>Phone internals</h2>
+      <p class="muted">Battery, storage and symptoms. Android: run <code>scripts/collect_android_diagnostics.py</code>. iPhone: Settings &gt; Battery &gt; Battery Health.</p>
+      <form id="phoneForm">
+        <div class="grid2">
+          <label class="f">Platform<select id="pPlatform"><option value="android">Android</option><option value="ios">iPhone</option><option value="other">Other</option></select></label>
+          <label class="f">Model<input id="pModel" maxlength="80" placeholder="optional"></label>
+          <label class="f">Battery health %<input id="pHealth" type="number" min="0" max="130" step="0.1" placeholder="e.g. 83"></label>
+          <label class="f">Charge cycles<input id="pCycles" type="number" min="0" max="20000" placeholder="e.g. 640"></label>
+          <label class="f">Battery temp °C<input id="pTemp" type="number" min="-40" max="120" step="0.1" placeholder="e.g. 36"></label>
+          <label class="f">Storage free GB<input id="pFree" type="number" min="0" step="0.1"></label>
+          <label class="f">Storage total GB<input id="pTotal" type="number" min="1" step="0.1"></label>
+        </div>
+        <h2 style="margin-top:14px">Problems</h2>
+        <div class="chips" id="symptoms"></div>
+        <button class="btn" type="submit">Check phone</button>
+      </form>
+    </div>
+    <div class="card"><h2>Result</h2><div id="phoneOut" class="muted empty">No result yet.</div></div>
+  </div>
+</section>
+
+<!-- ============ LIVE VITALS ============ -->
+<section id="tab-vitals" class="hidden">
+  <div class="disc">Camera estimate, not a medical device or a diagnosis. If you feel unwell, seek medical care.</div>
+  <div class="grid two">
+    <div class="card">
+      <h2>Pulse</h2>
+      <div class="row">
+        <button class="btn" id="vStart">Start camera</button>
+        <button class="btn ghost hidden" id="vStop">Stop</button>
+        <button class="btn ghost small" id="sirenBtn" type="button" aria-pressed="true"><svg class="ic"><use href="#i-bell"/></svg><span>Siren on</span></button>
+        <span class="muted" id="vStatus"></span>
+      </div>
+      <div class="stage hidden" id="vStage"><video id="vVideo" playsinline muted></video><div class="oval"></div></div>
+      <canvas id="vGrab" class="hid"></canvas>
+      <p class="muted">Face the light, fit your face in the oval, stay still for about 10 s. Only colour values are sent: no video, nothing stored.</p>
+    </div>
+    <div class="card"><h2>Result</h2><div id="vOut" class="muted empty">Start the camera.</div></div>
+  </div>
+</section>
+
+<!-- ============ HISTORY ============ -->
+<section id="tab-history" class="hidden">
+  <div class="card"><h2>Inspection history</h2>
+    <div id="fbSummary" class="muted" style="margin-bottom:10px"></div>
+    <div id="hist" class="muted">Loading…</div></div>
+</section>
+</main>
+  </div>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const badge = v => `<span class="badge ${esc(v)}">${esc(v)}</span>`;
+
+let cfg = { auth_required: false }, sb = null, token = null, charts = {}, timer = null;
+
+/* ---------------------------------------------------------------- api + auth */
+async function api(path, opts = {}) {
+  const headers = Object.assign({}, opts.headers || {});
+  if (token) headers.Authorization = "Bearer " + token;
+  const r = await fetch(path, Object.assign({}, opts, { headers }));
+  if (r.status === 401) { if (!document.body.classList.contains("signed-out")) showAuth("signin"); throw new Error("Please sign in"); }
+  const body = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(body.detail || ("Request failed (" + r.status + ")"));
+  return body;
+}
+
+let user = null, authOpen = false, recovery = false, providerOn = {}, pendingEmail = "", checkKind = "confirm";
+const REDIRECT = () => location.origin + "/";
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+const VIEWS = {
+  signin: { t: "Welcome back", s: "Sign in to continue to your dashboard.", social: true },
+  signup: { t: "Create your account", s: "It only takes a minute.", social: true },
+  forgot: { t: "Reset your password", s: "Enter your email and we'll send you a link to choose a new password.", social: false },
+  check:  { t: "Check your email", s: "", social: false },
+  phone:  { t: "Continue with your phone", s: "We'll text you a 6-digit code. Message and data rates may apply.", social: false },
+  otp:    { t: "Enter the code", s: "", social: false },
+  reset:  { t: "Choose a new password", s: "Pick something you haven't used before.", social: false },
+};
+const EYE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><line class="slash" x1="3" y1="3" x2="21" y2="21"/></svg>';
+
+function msg(sel, text, kind) {
+  const el = $(sel); el.textContent = text || "";
+  if (kind) el.className = "alert " + kind + (text ? " show" : "");
+  else el.classList.toggle("show", !!text);
+}
+function bad(input, on) { input.classList.toggle("bad", !!on); if (on) input.focus(); }
+function busy(form, on, label) {
+  const b = form.querySelector(".submit"), t = b.querySelector(".t");
+  if (on) { b.dataset.label = t.textContent; t.textContent = label || "Please wait…"; b.disabled = true; b.insertAdjacentHTML("afterbegin", '<span class="spin"></span>'); }
+  else { t.textContent = b.dataset.label || t.textContent; b.disabled = false; b.querySelector(".spin")?.remove(); }
+}
+function friendly(err) {
+  const m = String((err && err.message) || err || "");
+  if (/invalid login credentials/i.test(m)) return "That email and password don't match. Check them, or reset your password.";
+  if (/already (been )?registered|already exists/i.test(m)) return "An account with this email already exists. Sign in instead.";
+  if (/rate limit|too many|over_email_send_rate_limit|security purposes/i.test(m)) return "Too many attempts or emails just now. Wait a few minutes and try again.";
+  if (/failed to fetch|network|load failed/i.test(m)) return "Can't reach the sign-in service. Check your connection and try again.";
+  if (/provider is not enabled|unsupported provider/i.test(m)) return "That sign-in method isn't switched on for this project yet.";
+  if (/unverified|trial/i.test(m)) return "The SMS service is in trial mode and can only text verified numbers. Verify this number with the SMS provider, or upgrade it.";
+  if (/invalid phone|phone.*(format|invalid)/i.test(m)) return "That doesn't look like a valid phone number. Include the country code, e.g. +91 98765 43210.";
+  if (/token has expired|otp.*(expired|invalid)|invalid.*(token|otp)/i.test(m)) return "That code is wrong or has expired. Check it, or ask for a new one.";
+  if (/sms|twilio|sending (confirmation|sms|otp)|unable to send/i.test(m)) return "We couldn't send the text message. Check the number, including the country code, and try again.";
+  return m || "Something went wrong. Please try again.";
+}
+const pwOk = p => p.length >= 8 && /[A-Za-z]/.test(p) && /\d/.test(p);
+function pwScore(p) {
+  if (!p) return 0;
+  let s = 0;
+  if (p.length >= 8) s++;
+  if (/[a-z]/.test(p) && /[A-Z]/.test(p)) s++;
+  if (/\d/.test(p)) s++;
+  if (/[^A-Za-z0-9]/.test(p) || p.length >= 14) s++;
+  return Math.max(1, s);
+}
+
+/* ---- views */
+function setView(v) {
+  document.querySelectorAll("[data-view]").forEach(e => e.classList.toggle("hidden", e.dataset.view !== v));
+  $("#authTitle").textContent = VIEWS[v].t;
+  $("#authSub").textContent = VIEWS[v].s; $("#authSub").classList.toggle("hidden", !VIEWS[v].s);
+  $("#socialBox").classList.toggle("hidden", !VIEWS[v].social);
+  document.querySelectorAll(".auth .alert.err, #socialMsg").forEach(e => { e.textContent = ""; e.classList.remove("show"); });
+  document.querySelectorAll(".auth input.bad").forEach(e => e.classList.remove("bad"));
+  setTimeout(() => { const i = document.querySelector(`[data-view="${v}"] input:not([type=checkbox])`); if (i && (!i.value || i.id === "phNum")) i.focus(); }, 30);
+}
+function showAuth(view) { authOpen = true; applyChrome(); setView(view || "signin"); }
+document.querySelectorAll("[data-go]").forEach(b => b.onclick = () => {
+  const v = b.dataset.go;
+  if (v === "forgot") $("#fgEmail").value = $("#siEmail").value;
+  if (v === "signup" && !$("#suEmail").value) $("#suEmail").value = $("#siEmail").value;
+  setView(v);
+});
+document.querySelectorAll(".eye").forEach(b => {
+  b.innerHTML = EYE;
+  b.onclick = () => {
+    const i = $("#" + b.dataset.for), show = i.type === "password";
+    i.type = show ? "text" : "password"; b.classList.toggle("on", show);
+    b.setAttribute("aria-label", show ? "Hide password" : "Show password");
+  };
+});
+function wireStrength(inputId, barId, hintId) {
+  $(inputId).addEventListener("input", () => {
+    const p = $(inputId).value, s = pwScore(p);
+    $(barId).dataset.s = s;
+    if (hintId) $(hintId).textContent = !p ? "Use 8+ characters with letters and numbers."
+      : pwOk(p) ? ["", "Weak", "Fair", "Good", "Strong"][s] + " password" : "Needs 8+ characters with at least one letter and one number.";
+  });
+}
+wireStrength("#suPw", "#suStrength", "#suHint"); wireStrength("#rsPw", "#rsStrength", null);
+$("#suPw2").addEventListener("input", () => {
+  const a = $("#suPw").value, b = $("#suPw2").value;
+  $("#suMatch").textContent = !b ? "" : a === b ? "Passwords match" : "Passwords don't match yet";
+});
+
+document.querySelectorAll(".auth-form").forEach(f => f.addEventListener("input", () => {   // an old error is stale once the user edits
+  f.querySelectorAll(".alert.err").forEach(a => a.classList.remove("show"));
+  f.querySelectorAll("input.bad").forEach(i => i.classList.remove("bad"));
+}));
+
+/* ---- header chrome (user menu, which screen is visible) */
+function nameOf(u) {
+  const m = u.user_metadata || {};
+  return m.full_name || m.name || m.user_name || (u.email ? u.email.split("@")[0] : (u.phone ? "+" + String(u.phone).replace(/^\+/, "") : "Account"));
+}
+function applyChrome() {
+  const signedIn = !!user;
+  document.body.classList.toggle("signed-out", recovery || authOpen || (cfg.auth_required && !signedIn));
+  $("#signInBtn").classList.toggle("hidden", signedIn);
+  $("#userMenu").classList.toggle("hidden", !signedIn);
+  $("#guestLink").classList.toggle("hidden", !!cfg.auth_required || recovery);
+  if (signedIn) {
+    const n = nameOf(user), m = user.user_metadata || {}, img = m.avatar_url || m.picture, prov = (user.app_metadata && user.app_metadata.provider) || "email";
+    const who = user.email || (user.phone ? "+" + String(user.phone).replace(/^\+/, "") : "");
+    $("#mName").textContent = n; $("#mEmail").textContent = who; $("#sName").textContent = n; $("#sEmail").textContent = who;
+    $("#mProv").textContent = prov === "email" ? "Email sign-in" : prov === "phone" ? "Phone sign-in" : "Signed in with " + prov[0].toUpperCase() + prov.slice(1);
+    $("#avatarTxt").textContent = n.split(/\s+/).slice(0, 2).map(w => w[0] || "").join("").toUpperCase() || "?";
+    if (img) { $("#avatarImg").src = img; $("#avatarImg").classList.remove("hidden"); $("#avatarTxt").classList.add("hidden"); }
+    else { $("#avatarImg").classList.add("hidden"); $("#avatarTxt").classList.remove("hidden"); }
+  }
+  setTitle();
+}
+const TITLES = { overview: "Overview", inspect: "Inspect", history: "History", vitals: "Live vitals", screen: "Screening", patient: "Patient report", phone: "Phone health" };
+function setTitle() {
+  const on = document.querySelector("#nav button.on"), tab = on ? on.dataset.tab : "overview";
+  $("#pageTitle").textContent = tab === "overview" && user ? "Welcome back, " + nameOf(user).split(/\s+/)[0] : TITLES[tab];
+}
+function closeDrawer() { $("#side").classList.remove("open"); $("#scrim").classList.remove("show"); }
+$("#burger").onclick = () => { $("#side").classList.toggle("open"); $("#scrim").classList.toggle("show"); };
+$("#scrim").onclick = closeDrawer;
+function setSession(s) { token = s ? s.access_token : null; user = s ? s.user : null; applyChrome(); }
+function closeMenu() { $("#menuPanel").classList.add("hidden"); $("#avatarBtn").setAttribute("aria-expanded", "false"); }
+$("#avatarBtn").onclick = e => {
+  e.stopPropagation();
+  const open = $("#menuPanel").classList.toggle("hidden") === false;
+  $("#avatarBtn").setAttribute("aria-expanded", String(open));
+};
+document.addEventListener("click", e => { if (!$("#userMenu").contains(e.target)) closeMenu(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeMenu(); });
+$("#signOutBtn").onclick = async () => { closeMenu(); if (sb) await sb.auth.signOut(); };
+$("#signInBtn").onclick = () => showAuth("signin");
+$("#guestBtn").onclick = () => { authOpen = false; applyChrome(); };
+
+/* ---- social sign-in (Google, GitHub) */
+async function loadProviders() {
+  try {
+    const r = await fetch(cfg.supabase_url + "/auth/v1/settings", { headers: { apikey: cfg.supabase_anon_key } });
+    const ext = (await r.json()).external || {};
+    providerOn = { google: !!ext.google, github: !!ext.github, phone: !!ext.phone };
+  } catch { providerOn = {}; }
+  document.querySelectorAll(".social button").forEach(b => {
+    const off = providerOn[b.dataset.provider || "phone"] === false, tag = b.querySelector(".tag");
+    b.classList.toggle("off", off);
+    if (off && !tag) b.insertAdjacentHTML("beforeend", '<span class="tag">Not set up</span>');
+    if (!off && tag) tag.remove();
+  });
+}
+document.querySelectorAll(".social button[data-provider]").forEach(b => b.onclick = async () => {
+  const p = b.dataset.provider, name = p === "google" ? "Google" : "GitHub";
+  if (!sb) return msg("#socialMsg", "Sign-in isn't configured on this server.");
+  if (providerOn[p] === false) return msg("#socialMsg", `${name} sign-in isn't switched on for this project yet. The project admin can enable it in Supabase (Authentication → Sign In / Providers → ${name}); see AUTH_SETUP.md.`);
+  msg("#socialMsg", "");
+  const { error } = await sb.auth.signInWithOAuth({ provider: p, options: { redirectTo: REDIRECT() } });
+  if (error) msg("#socialMsg", friendly(error));
+});
+
+/* ---- phone number (one-time code by SMS) */
+let pendingPhone = "";
+function normPhone(raw) {
+  let p = String(raw).replace(/[\s\-().]/g, "");
+  if (p.startsWith("00")) p = "+" + p.slice(2);
+  return /^\+[1-9]\d{7,14}$/.test(p) ? p : null;
+}
+$("#phoneBtn").onclick = () => {
+  if (providerOn.phone === false) return msg("#socialMsg", "Phone sign-in isn't switched on for this project yet. The project admin can enable it in Supabase (Authentication → Sign In / Providers → Phone) and connect an SMS provider; see AUTH_SETUP.md.");
+  msg("#socialMsg", ""); setView("phone");
+};
+async function sendCode(phone) { return sb.auth.signInWithOtp({ phone, options: { channel: "sms" } }); }
+$("#fPhone").onsubmit = async e => {
+  e.preventDefault(); if (!sb) return msg("#phMsg", "Sign-in isn't configured on this server.");
+  const phone = normPhone($("#phNum").value); msg("#phMsg", "");
+  if (!phone) { bad($("#phNum"), true); return msg("#phMsg", "Enter a valid number with the country code, e.g. +91 98765 43210."); }
+  busy(e.target, true, "Sending code…");
+  const { error } = await sendCode(phone);
+  busy(e.target, false);
+  if (error) return msg("#phMsg", friendly(error));
+  pendingPhone = phone; setView("otp");
+  $("#otpHint").textContent = "We texted a code to " + phone + ". It expires in a few minutes.";
+  $("#otpCode").value = ""; cooldown($("#otpResend"), 30, "resend the code");
+};
+$("#otpCode").addEventListener("input", e => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, 6); });
+$("#fOtp").onsubmit = async e => {
+  e.preventDefault(); if (!sb) return;
+  const code = $("#otpCode").value.trim(); msg("#otpMsg", "");
+  if (!/^\d{6}$/.test(code)) { bad($("#otpCode"), true); return msg("#otpMsg", "Enter the 6-digit code from the text message."); }
+  busy(e.target, true, "Verifying…");
+  const { error } = await sb.auth.verifyOtp({ phone: pendingPhone, token: code, type: "sms" });
+  busy(e.target, false);
+  if (error) return msg("#otpMsg", friendly(error));
+  authOpen = false; applyChrome(); $("#otpCode").value = "";
+};
+$("#otpResend").onclick = async () => {
+  msg("#otpMsg", "");
+  const { error } = await sendCode(pendingPhone);
+  if (error) msg("#otpMsg", friendly(error)); else cooldown($("#otpResend"), 30, "resend the code");
+};
+
+/* ---- email + password */
+$("#fSignin").onsubmit = async e => {
+  e.preventDefault(); if (!sb) return msg("#siMsg", "Sign-in isn't configured on this server.");
+  const email = $("#siEmail").value.trim(), password = $("#siPw").value;
+  msg("#siMsg", ""); $("#siEmail").classList.remove("bad"); $("#siPw").classList.remove("bad");
+  if (!EMAIL_RE.test(email)) { bad($("#siEmail"), true); return msg("#siMsg", "Enter a valid email address."); }
+  if (!password) { bad($("#siPw"), true); return msg("#siMsg", "Enter your password."); }
+  busy(e.target, true, "Signing in…");
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  busy(e.target, false);
+  if (error) {
+    if (/not confirmed/i.test(error.message)) return showCheck("confirm", email);
+    return msg("#siMsg", friendly(error));
+  }
+  authOpen = false; applyChrome(); $("#siPw").value = "";
+};
+$("#fSignup").onsubmit = async e => {
+  e.preventDefault(); if (!sb) return msg("#suMsg", "Sign-up isn't configured on this server.");
+  const name = $("#suName").value.trim(), email = $("#suEmail").value.trim(), pw = $("#suPw").value, pw2 = $("#suPw2").value;
+  msg("#suMsg", ""); document.querySelectorAll("#fSignup input.bad").forEach(i => i.classList.remove("bad"));
+  if (name.length < 2) { bad($("#suName"), true); return msg("#suMsg", "Enter your full name."); }
+  if (!EMAIL_RE.test(email)) { bad($("#suEmail"), true); return msg("#suMsg", "Enter a valid email address."); }
+  if (!pwOk(pw)) { bad($("#suPw"), true); return msg("#suMsg", "Choose a password with 8+ characters, at least one letter and one number."); }
+  if (pw !== pw2) { bad($("#suPw2"), true); return msg("#suMsg", "The two passwords don't match."); }
+  if (!$("#suTerms").checked) return msg("#suMsg", "Please tick the box to continue.");
+  busy(e.target, true, "Creating account…");
+  const { data, error } = await sb.auth.signUp({ email, password: pw, options: { data: { full_name: name }, emailRedirectTo: REDIRECT() } });
+  busy(e.target, false);
+  if (error) return msg("#suMsg", friendly(error));
+  if (data.session) { authOpen = false; applyChrome(); return; }                         // email confirmation is switched off
+  if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0)
+    return msg("#suMsg", "An account with this email already exists. Sign in instead, or reset your password.");
+  $("#suPw").value = $("#suPw2").value = "";
+  showCheck("confirm", email);
+};
+$("#fForgot").onsubmit = async e => {
+  e.preventDefault(); if (!sb) return;
+  const email = $("#fgEmail").value.trim(); msg("#fgMsg", "");
+  if (!EMAIL_RE.test(email)) { bad($("#fgEmail"), true); return msg("#fgMsg", "Enter a valid email address."); }
+  busy(e.target, true, "Sending…");
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: REDIRECT() });
+  busy(e.target, false);
+  if (error) return msg("#fgMsg", friendly(error));
+  showCheck("reset", email);                                                              // same message whether or not the account exists
+};
+$("#fReset").onsubmit = async e => {
+  e.preventDefault(); if (!sb) return;
+  const pw = $("#rsPw").value, pw2 = $("#rsPw2").value; msg("#rsMsg", "");
+  if (!pwOk(pw)) { bad($("#rsPw"), true); return msg("#rsMsg", "Choose a password with 8+ characters, at least one letter and one number."); }
+  if (pw !== pw2) { bad($("#rsPw2"), true); return msg("#rsMsg", "The two passwords don't match."); }
+  busy(e.target, true, "Updating…");
+  const { error } = await sb.auth.updateUser({ password: pw });
+  busy(e.target, false);
+  if (error) return msg("#rsMsg", friendly(error));
+  recovery = false; authOpen = false; $("#rsPw").value = $("#rsPw2").value = ""; applyChrome();
+};
+
+/* ---- "check your email" */
+const cooldownTimers = new WeakMap();
+function cooldown(btn, secs = 30, label = "resend the email") {
+  clearInterval(cooldownTimers.get(btn));
+  let n = secs; btn.disabled = true; btn.textContent = `resend in ${n}s`;
+  cooldownTimers.set(btn, setInterval(() => {
+    n--;
+    if (n <= 0) { clearInterval(cooldownTimers.get(btn)); btn.disabled = false; btn.textContent = label; } else btn.textContent = `resend in ${n}s`;
+  }, 1000));
+}
+function showCheck(kind, email) {
+  checkKind = kind; pendingEmail = email;
+  setView("check");
+  $("#ckText").textContent = kind === "confirm"
+    ? `We sent a confirmation link to ${email}. Open it to activate your account, then come back here and sign in.`
+    : `If an account exists for ${email}, we've sent a link to reset the password. It can take a minute to arrive.`;
+  cooldown($("#ckResend"));
+}
+$("#ckResend").onclick = async () => {
+  msg("#ckMsg", "");
+  const { error } = checkKind === "confirm"
+    ? await sb.auth.resend({ type: "signup", email: pendingEmail, options: { emailRedirectTo: REDIRECT() } })
+    : await sb.auth.resetPasswordForEmail(pendingEmail, { redirectTo: REDIRECT() });
+  if (error) msg("#ckMsg", friendly(error)); else cooldown($("#ckResend"));
+};
+
+/* ---- boot */
+async function initAuth() {
+  try {
+    cfg = await fetch("/api/v1/config").then(r => r.json()).catch(() => cfg);
+    const h = new URLSearchParams(location.hash.slice(1));                                // e.g. an expired confirmation link
+    const urlErr = h.get("error_description");
+    if (cfg.supabase_url && cfg.supabase_anon_key && window.supabase) {
+      sb = window.supabase.createClient(cfg.supabase_url, cfg.supabase_anon_key);
+      loadProviders();
+      const { data } = await sb.auth.getSession();
+      setSession(data.session);
+      sb.auth.onAuthStateChange((event, s) => {
+        if (event === "PASSWORD_RECOVERY") { recovery = true; setSession(s); showAuth("reset"); return; }
+        const was = !!token;
+        if (event === "SIGNED_OUT") { recovery = false; authOpen = false; }
+        setSession(s);
+        if (event === "SIGNED_OUT") setView("signin");           // next visit starts on the sign-in form, whichever screen was last open
+        if (event === "SIGNED_IN" && s && !was) {
+          authOpen = false; applyChrome();
+          if (location.hash.includes("access_token") || /[?&]code=/.test(location.search)) history.replaceState(null, "", location.pathname);
+        }
+        if (event === "SIGNED_IN" || event === "SIGNED_OUT") refresh();
+      });
+    } else setSession(null);
+    if (urlErr) { showAuth("signin"); msg("#siMsg", urlErr.replace(/\+/g, " ")); history.replaceState(null, "", location.pathname); }
+    else if (cfg.auth_required && !token) {
+      setView("signin");
+      if (!sb) msg("#siMsg", "Sign-in isn't configured in this browser (Supabase failed to load).");
+    }
+  } finally { document.body.classList.remove("booting"); }
+}
+
+/* ---------------------------------------------------------------------- tabs */
+document.querySelectorAll("#nav button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("#nav button").forEach(x => x.classList.toggle("on", x === b));
+  document.querySelectorAll("main > section").forEach(s => s.classList.toggle("hidden", s.id !== "tab-" + b.dataset.tab));
+  if (b.dataset.tab !== "inspect") stopCamera();
+  if (b.dataset.tab !== "vitals") stopVitals();
+  if (b.dataset.tab !== "screen") stopSnap();
+  if (b.dataset.tab !== "patient") pCamStop();
+  setTitle(); closeDrawer();
+  refresh();
+});
+const activeTab = () => document.querySelector("#nav button.on").dataset.tab;
+function refresh() {
+  if (document.body.classList.contains("signed-out")) return;   // nothing to load behind the sign-in screen
+  const t = activeTab();
+  if (t === "overview") loadOverview().catch(() => {});
+  if (t === "history") loadHistory().catch(e => $("#hist").textContent = e.message);
+  if (t === "screen") loadModules().catch(() => {});
+  if (t === "patient") { loadPatientModules(); pRender(); }
+}
+
+/* ----------------------------------------------------------------- overview */
+function fmt(n, d = 0) { return n == null ? "–" : Number(n).toFixed(d); }
+function kpi(label, value, sub = "", icon = "scan", tone = "info") {
+  return `<div class="card kpi tone-${tone}"><span class="ico"><svg class="ic"><use href="#i-${icon}"/></svg></span><h2>${esc(label)}</h2><div class="v">${esc(value)}</div><div class="s">${esc(sub)}</div></div>`;
+}
+function drawChart(id, cfgObj) {
+  if (charts[id]) { charts[id].data = cfgObj.data; charts[id].update("none"); return; }
+  Chart.defaults.font.family = "Inter, system-ui, sans-serif"; Chart.defaults.color = css("--muted");
+  charts[id] = new Chart($("#" + id), cfgObj);
+}
+async function loadOverview() {
+  const d = await api("/api/v1/analytics/summary");
+  const h = d.history, r = d.runtime, v = h.verdicts, tot = Math.max(1, h.total);
+  $("#warnings").innerHTML = d.warnings.map(w =>
+    `<div class="warn ${esc(w.level)}">${badge(w.level)}<span>${esc(w.message)}</span></div>`).join("");
+  $("#kpis").innerHTML =
+    kpi("Inspections", h.total, "", "scan", "info") +
+    kpi("Pass rate", fmt(v.PASS / tot * 100) + "%", v.PASS + " passed", "check", "pass") +
+    kpi("Review", v.REVIEW, "need a look", "eye", "review") +
+    kpi("Failed", v.FAIL, fmt(v.FAIL / tot * 100) + "% of total", "x", "fail") +
+    kpi("Screenings", r.totals.screenings, "since start", "heart", "info");
+  const lvl = d.warnings.some(w => w.level === "ERROR") ? "err" : d.warnings.some(w => w.level === "WARNING") ? "warn" : "ok";
+  const pill = $("#sysPill"); pill.className = "pill p-" + lvl;
+  pill.textContent = lvl === "ok" ? "All systems normal" : lvl === "warn" ? "Needs attention" : "Issues detected";
+
+  $("#edge").innerHTML = `
+    <table class="sys">
+      <tr><td>Stability</td><td><b>${fmt(r.edge.stability_score)}</b> / 100
+        <div class="bar" style="margin-top:5px"><i style="width:${r.edge.stability_score}%"></i></div></td></tr>
+      <tr><td>Latency</td><td>${fmt(r.latency_ms.p50)} ms <span class="muted">· p95 ${fmt(r.latency_ms.p95)} ms</span></td></tr>
+      <tr><td>Throughput</td><td>${fmt(r.throughput_fps, 1)} / s</td></tr>
+      <tr><td>CPU · Memory</td><td>${fmt(r.edge.cpu_pct)}% · ${fmt(r.edge.mem_pct)}%</td></tr>
+      <tr><td>Errors</td><td>${fmt(r.edge.error_rate * 100, 1)}%</td></tr>
+      <tr><td>Detector</td><td>${esc(d.models.detector)} · ${esc(r.device)}</td></tr>
+      <tr><td>Anomaly banks</td><td>${esc((d.models.anomaly_banks || []).join(", ") || "none")}</td></tr>
+      <tr><td>Health models</td><td>${(d.models.screening_installed || []).length} installed</td></tr>
+      <tr><td>Uptime</td><td>${Math.floor(r.uptime_s / 3600)}h ${Math.floor(r.uptime_s % 3600 / 60)}m</td></tr>
+      <tr><td>Storage</td><td>${esc(d.store)}</td></tr>
+    </table>`;
+
+  const prods = Object.entries(h.by_product);
+  $("#byProduct").innerHTML = prods.length ? `<table><tr><th>Product</th><th>Pass</th><th>Review</th><th>Fail</th></tr>` +
+    prods.map(([p, c]) => `<tr><td>${esc(p)}</td><td>${c.PASS || 0}</td><td>${c.REVIEW || 0}</td><td>${c.FAIL || 0}</td></tr>`).join("") + "</table>"
+    : `<span class="muted empty">No data yet.</span>`;
+
+  $("#recent").innerHTML = h.recent.length ? `<table><tr><th>Time</th><th>Product</th><th>Verdict</th><th>Score</th><th>Defects</th><th>ms</th></tr>` +
+    h.recent.map(x => `<tr><td>${esc(new Date(x.created_at).toLocaleString())}</td><td>${esc(x.product_type)}</td><td>${badge(x.verdict)}</td>
+      <td>${fmt(x.score, 2)}</td><td>${esc((x.defects || []).join(", ") || "–")}</td><td>${fmt(x.latency_ms)}</td></tr>`).join("") + "</table>"
+    : `<span class="muted empty">No inspections yet.</span>`;
+
+  $("#events").innerHTML = d.events.length ? `<table>` + d.events.map(e =>
+    `<tr><td>${esc(new Date(e.created_at).toLocaleString())}</td><td>${badge(e.level)}</td><td>${esc(e.message)}</td></tr>`).join("") + "</table>"
+    : `<span class="muted">No events.</span>`;
+
+  const axis = { ticks: { color: css("--muted") }, grid: { color: css("--line") } };
+  drawChart("chDaily", { type: "bar", data: {
+      labels: h.daily.map(x => x.day.slice(5)),
+      datasets: [
+        { label: "Pass", data: h.daily.map(x => x.PASS), backgroundColor: css("--pass"), borderRadius: 3 },
+        { label: "Review", data: h.daily.map(x => x.REVIEW), backgroundColor: css("--review"), borderRadius: 3 },
+        { label: "Fail", data: h.daily.map(x => x.FAIL), backgroundColor: css("--fail"), borderRadius: 3 }] },
+    options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true, ...axis }, y: { stacked: true, beginAtZero: true, ...axis } },
+      plugins: { legend: { labels: { color: css("--ink") } } } } });
+  const dt = Object.entries(r.defect_types);
+  drawChart("chDefects", { type: "bar", data: { labels: dt.map(x => x[0]), datasets: [{ label: "count", data: dt.map(x => x[1]), backgroundColor: css("--accent") }] },
+    options: { indexAxis: "y", responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true, ...axis }, y: axis }, plugins: { legend: { display: false } } } });
+}
+
+/* ------------------------------------------------------------------ inspect */
+/* How the product type was decided, so a wrong guess is easy to spot and fix with the Product menu. */
+function detectedLine(d) {
+  const a = d.detected_as; if (!a) return "";
+  if (a.product_type === "unknown") return `<div class="detect warn-line">Couldn't tell what this is. Choose the product type above and run it again.</div>`;
+  const how = { yolo: "object detector", classifier: "image classifier", face: "face detector" }[a.source] || a.source;
+  return `<div class="muted detect">Detected as <b>${esc(a.product_type)}</b>${a.source === "selected" ? " · selected by you" : ` · ${Math.round(a.confidence * 100)}% · ${esc(how)}`}</div>`;
+}
+function showInspect(d) {
+  const defects = d.defects || [];
+  if (d.product_type === "person") {           // a person is not a product: no verdict, point to the right tools
+    const img = d.annotated_image || d.annotated;
+    $("#inspectOut").innerHTML = `
+      <div class="row"><span class="badge INFO" style="font-size:15px">Person detected</span>
+        <span class="muted">${d.people || 1} in frame · ${fmt(d.latency_ms)} ms</span></div>
+      ${img ? `<img class="out" src="${img.startsWith("data:") ? img : "data:image/jpeg;base64," + img}" alt="person detected">` : ""}
+      <p>This photo shows a person, not a product, so there is no PASS / FAIL verdict. To check a person, use:</p>
+      <div class="row">
+        <button class="btn ghost small" data-jump="screen">Health screening</button>
+        <button class="btn ghost small" data-jump="patient">Patient report</button>
+        <button class="btn ghost small" data-jump="vitals">Live vitals</button></div>
+      <p class="muted">Not saved to inspection history. Photographing a product held in a hand? Pick the product type above (e.g. phone) and try again.</p>`;
+    $("#inspectOut").querySelectorAll("[data-jump]").forEach(b => b.onclick = () => $(`#nav button[data-tab="${b.dataset.jump}"]`).click());
+    return;
+  }
+  $("#inspectOut").innerHTML = `
+    <div class="row"><span style="font-size:20px">${badge(d.smoothed_verdict || d.verdict)}</span>
+      <b>${esc(d.product_type === "unknown" ? "Unknown product" : d.product_type)}</b><span class="muted">score ${fmt(d.score, 2)} · ${fmt(d.latency_ms)} ms</span></div>
+    ${detectedLine(d)}
+    ${d.annotated_image || d.annotated ? `<img class="out" src="${d.annotated_image || "data:image/jpeg;base64," + d.annotated}" alt="annotated result">` : ""}
+    ${(d.reasons || []).map(r => `<p>${esc(r)}</p>`).join("")}
+    ${defects.length ? `<table><tr><th>Defect</th><th>Severity</th><th>Score</th><th>Detail</th></tr>` +
+      defects.map(x => `<tr><td>${esc(x.type)}</td><td>${esc(x.severity)}</td><td>${fmt(x.score, 2)}</td><td>${esc(x.detail)}</td></tr>`).join("") + "</table>" : ""}
+    ${adviceHtml(d.advice)}
+    ${d.people ? `<p class="muted">${d.people} ${d.people === 1 ? "person is" : "people are"} also in the photo; only the product was inspected.</p>` : ""}
+    <p class="muted">${esc(d.disclaimer || "")}</p>`;
+}
+function adviceHtml(a) {
+  if (!a || !a.headline) return "";
+  const items = (a.items || []).map(i => `<div style="margin-top:8px"><b>${esc(i.issue)}</b> ${badge(i.urgency === "safety" ? "FAIL" : i.urgency === "urgent" ? "FAIL" : i.urgency === "soon" ? "REVIEW" : "PASS")}
+      <span class="muted">${esc(i.urgency)}</span>
+      <div class="muted">Likely causes: ${esc((i.likely_causes || []).join("; "))}</div>
+      <ul class="tight">${(i.recommended_actions || []).map(x => `<li>${esc(x)}</li>`).join("")}</ul>
+      <div class="muted">Factory: ${esc(i.factory_action)}</div></div>`).join("");
+  return `<div class="card" style="margin-top:10px"><h2>What to do</h2><b>${esc(a.headline)}</b>
+    <div class="muted">QC disposition: ${esc(a.qc_disposition)}</div>${items}
+    <p class="muted" style="margin-top:8px">${esc((a.not_visible_in_photos || []).join(" "))}</p></div>`;
+}
+function wireDrop(dropId, fileId, handler) {
+  const drop = $(dropId), input = $(fileId);
+  drop.onclick = () => input.click();
+  input.onchange = () => { const f = input.files[0]; input.value = ""; if (f) handler(f); };   // reset so the same file can be chosen again
+  drop.ondragover = e => { e.preventDefault(); drop.classList.add("over"); };
+  drop.ondragleave = () => drop.classList.remove("over");
+  drop.ondrop = e => { e.preventDefault(); drop.classList.remove("over"); e.dataTransfer.files[0] && handler(e.dataTransfer.files[0]); };
+}
+wireDrop("#drop", "#file", async f => {
+  $("#inspectOut").textContent = "Inspecting…";
+  const fd = new FormData(); fd.append("file", f); fd.append("product_type", $("#product").value);
+  try { showInspect(await api("/api/v1/inspect", { method: "POST", body: fd })); }
+  catch (e) { $("#inspectOut").textContent = e.message; }
+});
+
+/* live camera over websocket */
+let ws = null, stream = null, camTimer = null, waiting = false;
+async function startCamera() {
+  try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 1280 } }, audio: false }); }
+  catch (e) { $("#camStatus").textContent = "Camera unavailable: " + e.message; return; }
+  const v = $("#video"); v.srcObject = stream; v.classList.remove("hidden"); await v.play();
+  $("#camStart").classList.add("hidden"); $("#camStop").classList.remove("hidden");
+  const proto = location.protocol === "https:" ? "wss" : "ws";
+  const q = new URLSearchParams(); if (token) q.set("token", token); if ($("#product").value) q.set("product", $("#product").value);
+  ws = new WebSocket(`${proto}://${location.host}/ws/stream?${q}`);
+  ws.onopen = () => { $("#camStatus").textContent = "Live"; sendFrame(); };
+  ws.onmessage = ev => { waiting = false; const d = JSON.parse(ev.data); if (!d.error) showInspect(d); camTimer = setTimeout(sendFrame, 120); };
+  ws.onclose = ev => { $("#camStatus").textContent = ev.code === 4401 ? "Sign in required" : "Disconnected"; };
+}
+function sendFrame() {
+  if (!ws || ws.readyState !== 1 || waiting) return;
+  const v = $("#video"), c = $("#grab"), w = Math.min(960, v.videoWidth || 640);
+  c.width = w; c.height = Math.round(w * (v.videoHeight || 480) / (v.videoWidth || 640));
+  c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
+  waiting = true;
+  c.toBlob(b => b && ws && ws.readyState === 1 ? ws.send(b) : (waiting = false), "image/jpeg", 0.8);
+}
+function stopCamera() {
+  clearTimeout(camTimer); waiting = false;
+  if (ws) { ws.close(); ws = null; }
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  $("#video").classList.add("hidden"); $("#camStart").classList.remove("hidden"); $("#camStop").classList.add("hidden");
+  $("#camStatus").textContent = "";
+}
+$("#camStart").onclick = startCamera; $("#camStop").onclick = stopCamera;
+
+/* ---------------------------------------------------------------- screening */
+let modules = [];
+async function loadModules() {
+  const d = await api("/api/v1/screen/modules");
+  modules = d.modules; $("#disc").textContent = d.disclaimer;
+  const sel = $("#module"), prev = sel.value;
+  sel.innerHTML = moduleOptions();
+  const firstReady = modules.find(m => m.installed);
+  if (prev) sel.value = prev; else if (firstReady) sel.value = firstReady.name;
+  updateHint();
+}
+/* Installed modules first, the rest grouped under what they still need. */
+function moduleOptions() {
+  const ready = modules.filter(m => m.installed), todo = modules.filter(m => !m.installed);
+  const opt = (m, suffix = "") => `<option value="${esc(m.name)}">${esc(m.title || m.name)}${suffix}</option>`;
+  return (ready.length ? `<optgroup label="Ready (${ready.length})">${ready.map(m => opt(m)).join("")}</optgroup>` : "") +
+    (todo.length ? `<optgroup label="Needs a trained model (${todo.length})">${todo.map(m => opt(m, " (not installed)")).join("")}</optgroup>` : "");
+}
+/* The honest numbers behind an installed module: measured on photos it never saw. */
+function evidenceHtml(m) {
+  const t = m.validation && m.validation.locked_test; if (!m.installed) return "";
+  if (!t) return `<b>Installed, but no held-out test numbers are recorded: do not rely on it.</b> `;
+  const ci = t.auc_ci95 || [];
+  return `<b>Held-out test:</b> AUC ${fmt(t.auc, 2)} (95% CI ${fmt(ci[0], 2)} to ${fmt(ci[1], 2)}) on ${t.n_images} photos of the same public dataset. ` +
+    `Research prototype, not clinical validation; real-world accuracy can be much lower. `;
+}
+function updateHint() {
+  const m = modules.find(x => x.name === $("#module").value); if (!m) return;
+  $("#moduleHint").innerHTML = (m.installed ? evidenceHtml(m) : "Not installed: this check still needs a trained model (see README). ") + (m.input ? esc("Expected input: " + m.input + ".") : "");
+}
+$("#module").onchange = updateHint;
+async function runScreen(f) {
+  $("#screenOut").textContent = "Analysing…";
+  const fd = new FormData(); fd.append("file", f); fd.append("explain", $("#explain").checked);
+  try {
+    const d = await api("/api/v1/screen/" + encodeURIComponent($("#module").value), { method: "POST", body: fd });
+    const probs = Object.entries(d.probabilities).sort((a, b) => b[1] - a[1]);
+    $("#screenOut").innerHTML = `
+      <div class="row"><span style="font-size:20px">${badge(d.triage)}</span><b>${esc(d.top_label)}</b>
+        <span class="muted">${fmt(d.latency_ms)} ms</span></div>
+      <p>${esc(d.message)}</p>
+      ${probs.map(([k, p]) => `<div>${esc(k)} <span class="muted">${fmt(p * 100, 1)}%</span><div class="bar"><i style="width:${p * 100}%"></i></div></div>`).join("")}
+      ${d.heatmap_image ? `<p class="muted">Highlighted areas influenced the model most:</p><img class="out" src="${d.heatmap_image}" alt="model attention heatmap">` : ""}
+      <div class="disc" style="margin-top:12px">${esc(d.disclaimer)}</div>`;
+  } catch (e) { $("#screenOut").textContent = e.message; }
+}
+wireDrop("#drop2", "#file2", runScreen);
+let snapStream = null;
+async function startSnap() {
+  try { snapStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false }); }
+  catch (e) { $("#screenOut").textContent = "Camera unavailable: " + e.message; return; }
+  const v = $("#snapVideo"); v.srcObject = snapStream; v.classList.remove("hidden"); await v.play();
+  $("#snapStart").classList.add("hidden"); $("#snapTake").classList.remove("hidden"); $("#snapStop").classList.remove("hidden");
+}
+function stopSnap() {
+  if (snapStream) { snapStream.getTracks().forEach(t => t.stop()); snapStream = null; }
+  $("#snapVideo").classList.add("hidden"); $("#snapTake").classList.add("hidden"); $("#snapStop").classList.add("hidden");
+  $("#snapStart").classList.remove("hidden");
+}
+$("#snapStart").onclick = startSnap; $("#snapStop").onclick = stopSnap;
+$("#snapTake").onclick = () => {
+  const v = $("#snapVideo"), c = $("#snapCanvas"); c.width = v.videoWidth; c.height = v.videoHeight;
+  c.getContext("2d").drawImage(v, 0, 0);
+  c.toBlob(b => { stopSnap(); if (b) runScreen(new File([b], "capture.jpg", { type: "image/jpeg" })); }, "image/jpeg", 0.92);
+};
+
+/* ------------------------------------------------------------------ history */
+function reviewerCell(x) {
+  const f = x.feedback;
+  const status = f ? `${badge(f.verdict)} <span class="muted">${f.verdict === x.verdict ? "agrees" : "overrides"}${f.note ? " · " + esc(f.note) : ""}</span><br>` : "";
+  const opts = ["PASS", "REVIEW", "FAIL"].filter(v => v !== x.verdict).map(v => `<option value="${v}">Change to ${v}</option>`).join("");
+  return `${status}<select class="fb" data-id="${esc(x.id)}" data-model="${esc(x.verdict)}" aria-label="Reviewer verdict">
+    <option value="">${f ? "Update review…" : "Review…"}</option><option value="agree">✓ Agree with ${esc(x.verdict)}</option>${opts}</select>`;
+}
+async function sendFeedback(sel) {
+  const model = sel.dataset.model;
+  const verdict = sel.value === "agree" ? model : sel.value;
+  if (!verdict) return;
+  let note = null;
+  if (verdict !== model) {
+    note = prompt("Why do you disagree? (optional, e.g. 'glare, not a crack')");
+    if (note === null) { sel.value = ""; return; }   // cancelled
+  }
+  sel.disabled = true;
+  try {
+    await api("/api/v1/inspections/" + encodeURIComponent(sel.dataset.id) + "/feedback",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ verdict, note: note || null }) });
+    await loadHistory();
+  } catch (e) { sel.disabled = false; sel.value = ""; alert(e.message); }
+}
+async function loadHistory() {
+  const [d, fb] = await Promise.all([api("/api/v1/inspections?limit=100"), api("/api/v1/feedback?limit=1").catch(() => null)]);
+  const s = fb && fb.summary;
+  $("#fbSummary").textContent = s && s.reviewed
+    ? `Reviewer check: ${s.reviewed} reviewed · model agreed ${Math.round(s.agreement_rate * 100)}% · ${s.false_alarms} false alarm(s) · ${s.misses} miss(es)`
+    : "Review a result to track how often the model is right.";
+  $("#hist").innerHTML = d.items.length ? `<table><tr><th>Time</th><th>Product</th><th>Verdict</th><th>Score</th><th>Defects</th><th>Source</th><th>Reviewer</th><th></th></tr>` +
+    d.items.map(x => `<tr><td>${esc(new Date(x.created_at).toLocaleString())}</td><td>${esc(x.product_type)}</td><td>${badge(x.verdict)}</td>
+      <td>${fmt(x.score, 2)}</td><td>${esc((x.defects || []).map(t => t.type).join(", ") || "–")}</td><td>${esc(x.source)}</td>
+      <td>${reviewerCell(x)}</td>
+      <td>${x.annotated_url ? `<a href="${esc(x.annotated_url)}" target="_blank" rel="noopener">image</a>` : ""}</td></tr>`).join("") + "</table>"
+    : "No inspections yet.";
+  document.querySelectorAll("#hist select.fb").forEach(sel => sel.onchange = () => sendFeedback(sel));
+}
+
+/* ------------------------------------------------------------- phone health */
+const SYMPTOMS = { overheating: "Overheating", fast_drain: "Battery drains fast", random_restarts: "Random restarts", touch_issues: "Touch problems",
+  screen_flicker: "Screen flicker", screen_lines: "Lines on screen", not_charging: "Not charging", slow_charging: "Slow charging",
+  no_sound: "No sound", camera_blur: "Blurry camera", wifi_drops: "Wi-Fi drops", drops_signal: "Signal drops", apps_crash: "Apps crash",
+  water_exposure: "Water exposure", bulging: "Swollen battery / lifting back" };
+$("#symptoms").innerHTML = Object.entries(SYMPTOMS).map(([k, v]) => `<label><input type="checkbox" value="${k}"> ${esc(v)}</label>`).join("");
+const numOrNull = id => { const v = $(id).value; return v === "" ? null : Number(v); };
+$("#phoneForm").onsubmit = async e => {
+  e.preventDefault();
+  const body = { platform: $("#pPlatform").value, model: $("#pModel").value || null,
+    symptoms: [...document.querySelectorAll("#symptoms input:checked")].map(x => x.value) };
+  const bat = { health_pct: numOrNull("#pHealth"), cycle_count: numOrNull("#pCycles"), temperature_c: numOrNull("#pTemp") };
+  if (Object.values(bat).some(v => v !== null)) body.battery = Object.fromEntries(Object.entries(bat).filter(([, v]) => v !== null));
+  const free = numOrNull("#pFree"), total = numOrNull("#pTotal");
+  if (free !== null && total !== null) body.storage = { free_gb: free, total_gb: total };
+  $("#phoneOut").textContent = "Checking…";
+  try {
+    const d = await api("/api/v1/diagnostics/phone", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    $("#phoneOut").innerHTML = `<div class="row"><span style="font-size:20px">${badge(d.verdict)}</span><b>${d.health_score}/100</b>
+        <span class="muted">data completeness ${Math.round(d.data_completeness * 100)}%</span></div>
+      ${d.findings.map(f => `<div style="margin-top:8px">${badge(f.severity === "safety" ? "UNSAFE" : f.severity === "high" ? "POOR" : f.severity === "medium" ? "FAIR" : "GOOD")}
+        <b>${esc(f.title)}</b> <span class="muted">${esc(f.evidence || "")}</span>
+        ${f.causes ? `<div class="muted">Possible causes: ${esc(f.causes.join("; "))}</div>` : ""}</div>`).join("") || "<p>No problems found in the data you gave.</p>"}
+      ${d.next_steps.length ? `<h2 style="margin-top:14px">Next steps</h2><ul class="tight">${d.next_steps.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+      <p class="muted">${esc(d.notes.join(" "))}</p>`;
+  } catch (err) { $("#phoneOut").textContent = err.message; }
+};
+
+/* ------------------------------------------------------------- patient report */
+let pFindings = {}, pPatientId = null, lastVitals = null, pStream = null, pBlobUrl = null;
+const TRIAGE_TXT = { HIGH: "Needs evaluation", MODERATE: "Check-up advisable", LOW: "No concerning pattern", INCONCLUSIVE: "Could not assess" };
+async function loadPatientModules() {
+  if (!modules.length) { try { const d = await api("/api/v1/screen/modules"); modules = d.modules; } catch (e) { $("#pMsg").textContent = e.message; return; } }
+  const sel = $("#pModule"), prev = sel.value;
+  sel.innerHTML = moduleOptions();
+  const firstReady = modules.find(m => m.installed);
+  if (prev) sel.value = prev; else if (firstReady) sel.value = firstReady.name;
+  pHint();
+}
+function pHint() {
+  const m = modules.find(x => x.name === $("#pModule").value); if (!m) return;
+  $("#pHint").innerHTML = (m.installed ? evidenceHtml(m) : `<b>No trained model installed for this check yet.</b> `) +
+    (m.input ? "Image: " + esc(m.input) + ". " : "") + (m.device ? `<br>Needs: <b>${esc(m.device)}</b>. ` : "") +
+    (m.evidence ? `Evidence level: ${esc(String(m.evidence).replace(/_/g, " "))}.` : "");
+}
+$("#pModule").onchange = pHint;
+function pValid() { return $("#pConsent").checked && Object.keys(pFindings).length > 0; }
+function pRender() {
+  const f = Object.values(pFindings);
+  $("#pFindings").innerHTML = f.length ? f.map(x => `<div class="row" style="border-bottom:1px solid var(--line);padding-bottom:8px">
+      <div style="min-width:170px"><b>${esc(x.title)}</b><div class="muted">${esc(x.body_area || "")}</div></div>
+      <span>${badge(x.triage)} <span class="muted">${esc(TRIAGE_TXT[x.triage] || "")}</span></span>
+      <span class="muted">${x.triage === "INCONCLUSIVE" ? esc(x.message || "") : "concern score " + fmt(x.concern_probability * 100) + "%"}</span>
+      ${x.heatmap_image ? `<img class="out" style="width:70px" src="${x.heatmap_image}" alt="heat-map">` : ""}
+      <button class="btn ghost" data-rm="${esc(x.module)}">Remove</button></div>`).join("") : "No checks yet.";
+  document.querySelectorAll("[data-rm]").forEach(b => b.onclick = () => { delete pFindings[b.dataset.rm]; pRender(); });
+  $("#pReport").disabled = !pValid();
+  $("#pVitals").disabled = !lastVitals;
+  $("#pVitalsTxt").textContent = lastVitals ? `(about ${lastVitals.bpm} bpm, confidence ${Math.round(lastVitals.confidence * 100)}%)` : "(measure it in the Live vitals tab first)";
+}
+$("#pConsent").onchange = pRender;
+function pPatientBody() {
+  return {
+    name: $("#pName").value.trim() || null, age_years: $("#pAge").value === "" ? null : Number($("#pAge").value),
+    sex: $("#pSex").value, external_ref: $("#pRef").value.trim() || null, skin_type: $("#pSkin").value,
+    symptoms: $("#pSym").value.split(",").map(x => x.trim()).filter(Boolean).slice(0, 15), consent_given: $("#pConsent").checked,
+  };
+}
+async function ensurePatientRecord() {
+  if (!$("#pSave").checked || pPatientId) return;
+  const b = pPatientBody();
+  const r = await api("/api/v1/patients", { method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ full_name: b.name, external_ref: b.external_ref, age_years: b.age_years, sex: b.sex, skin_type: b.skin_type, consent_given: b.consent_given }) });
+  pPatientId = r.id; $("#pRecord").textContent = "Patient record saved (id " + r.id.slice(0, 8) + "…).";
+}
+async function pRun(file) {
+  if (!$("#pConsent").checked) { $("#pMsg").textContent = "Please tick the consent box first."; return; }
+  const module = $("#pModule").value, m = modules.find(x => x.name === module) || {};
+  $("#pMsg").textContent = "Analysing…";
+  try {
+    await ensurePatientRecord();
+    const fd = new FormData(); fd.append("file", file); fd.append("explain", $("#pExplain").checked); fd.append("save", Boolean(pPatientId));
+    if (pPatientId) fd.append("patient_id", pPatientId);
+    const d = await api("/api/v1/screen/" + encodeURIComponent(module), { method: "POST", body: fd });
+    pFindings[module] = Object.assign({}, d, { module, title: m.title || module, body_area: m.body_area });
+    $("#pMsg").textContent = ""; pRender();
+  } catch (e) { $("#pMsg").textContent = e.message; }
+}
+wireDrop("#pDrop", "#pFile", pRun);
+async function pCamStart() {
+  try { pStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false }); }
+  catch (e) { $("#pMsg").textContent = "Camera unavailable: " + e.message; return; }
+  const v = $("#pVideo"); v.srcObject = pStream; v.classList.remove("hidden"); await v.play();
+  $("#pCamStart").classList.add("hidden"); $("#pCamTake").classList.remove("hidden"); $("#pCamStop").classList.remove("hidden");
+}
+function pCamStop() {
+  if (pStream) { pStream.getTracks().forEach(t => t.stop()); pStream = null; }
+  $("#pVideo").classList.add("hidden"); $("#pCamTake").classList.add("hidden"); $("#pCamStop").classList.add("hidden");
+  $("#pCamStart").classList.remove("hidden");
+}
+$("#pCamStart").onclick = pCamStart; $("#pCamStop").onclick = pCamStop;
+$("#pCamTake").onclick = () => {
+  const v = $("#pVideo"), c = $("#pCanvas"); c.width = v.videoWidth; c.height = v.videoHeight; c.getContext("2d").drawImage(v, 0, 0);
+  c.toBlob(b => { pCamStop(); if (b) pRun(new File([b], "capture.jpg", { type: "image/jpeg" })); }, "image/jpeg", 0.92);
+};
+async function pFetchPdf(path, body) {
+  const headers = { "Content-Type": "application/json" }; if (token) headers.Authorization = "Bearer " + token;
+  const r = await fetch(path, { method: body ? "POST" : "GET", headers, body: body ? JSON.stringify(body) : undefined });
+  if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(typeof j.detail === "string" ? j.detail : "Could not build the report (" + r.status + ")"); }
+  const blob = await r.blob(); if (pBlobUrl) URL.revokeObjectURL(pBlobUrl); pBlobUrl = URL.createObjectURL(blob);
+  $("#pReportOut").innerHTML = `Report ready: <a href="${pBlobUrl}" target="_blank" rel="noopener">open</a> · <a href="${pBlobUrl}" download="screening-report.pdf">download PDF</a>`;
+}
+$("#pReport").onclick = async () => {
+  $("#pReportOut").textContent = "Building report…";
+  const patient = pPatientBody();
+  const body = { operator: $("#pOp").value.trim() || null,
+    findings: Object.values(pFindings).map(x => ({ module: x.module, triage: x.triage, top_label: x.top_label, concern_probability: x.concern_probability,
+      probabilities: x.probabilities, quality: x.quality, message: x.message, heatmap_image: x.heatmap_image || null })) };
+  if (pPatientId) { body.patient_id = pPatientId; body.symptoms = patient.symptoms; } else body.patient = patient;
+  if ($("#pVitals").checked && lastVitals) body.vitals = { bpm: lastVitals.bpm, confidence: lastVitals.confidence, status: "ok" };
+  try { await pFetchPdf("/api/v1/report", body); } catch (e) { $("#pReportOut").textContent = e.message; }
+};
+$("#pSample").onclick = async () => { try { await pFetchPdf("/api/v1/report/sample"); } catch (e) { $("#pReportOut").textContent = e.message; } };
+$("#pReset").onclick = () => {
+  pFindings = {}; pPatientId = null; $("#pRecord").textContent = ""; $("#pReportOut").textContent = "";
+  ["#pName", "#pAge", "#pRef", "#pSym", "#pOp"].forEach(i => $(i).value = ""); $("#pSex").value = "unknown"; $("#pSkin").value = "unknown";
+  $("#pConsent").checked = false; $("#pSave").checked = false; pRender();
+};
+
+/* ---------------------------------------------------------------- siren (pulse out of range)
+   Web Audio, no sound files. Low pulse: slow, deep wail. High pulse: fast wail. Danger: fastest and loudest.
+   Plays a 4 s burst when the pulse enters a bad zone and repeats every 10 s while it stays there; stops the moment
+   it is normal again, when the camera stops, or when muted. Browsers only allow sound after a click, so the audio
+   context is created when "Start camera" is pressed. */
+const siren = (() => {
+  const KIND = { low: "low", elevated: "high", high: "high", danger_low: "danger", danger_high: "danger" };
+  const SHAPE = { low: [280, 520, 2.6, 0.10], high: [650, 1150, 0.9, 0.12], danger: [700, 1500, 0.5, 0.18] };   // low Hz, high Hz, sweep s, volume
+  let ctx = null, nodes = null, burstTimer = null, repeatTimer = null, zone = null, muted = false;
+  try { muted = localStorage.getItem("siren") === "off"; } catch (e) { /* storage blocked: default on */ }
+  function prime() {
+    if (!ctx) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false; ctx = new AC(); }
+    if (ctx.state === "suspended") ctx.resume();
+    return true;
+  }
+  function silence() {
+    clearTimeout(burstTimer);
+    if (!nodes) return;
+    const { osc, lfo, gain } = nodes; nodes = null;
+    try { gain.gain.cancelScheduledValues(ctx.currentTime); gain.gain.setTargetAtTime(0.0001, ctx.currentTime, 0.03); osc.stop(ctx.currentTime + 0.2); lfo.stop(ctx.currentTime + 0.2); } catch (e) { /* already stopped */ }
+  }
+  function burst(kind) {
+    if (muted || !prime()) return;
+    silence();
+    const [lo, hi, sweep, vol] = SHAPE[kind];
+    const osc = ctx.createOscillator(), lfo = ctx.createOscillator(), depth = ctx.createGain(), gain = ctx.createGain();
+    osc.type = "sawtooth"; osc.frequency.value = (lo + hi) / 2;
+    lfo.type = "triangle"; lfo.frequency.value = 1 / sweep; depth.gain.value = (hi - lo) / 2;
+    lfo.connect(depth); depth.connect(osc.frequency);
+    gain.gain.value = 0.0001; gain.gain.setTargetAtTime(vol, ctx.currentTime, 0.02);
+    osc.connect(gain); gain.connect(ctx.destination);
+    osc.start(); lfo.start();
+    nodes = { osc, lfo, gain, kind };
+    burstTimer = setTimeout(silence, 4000);
+  }
+  function stopAll() { clearInterval(repeatTimer); repeatTimer = null; zone = null; silence(); }
+  /** Call with the server's zone name on every reading; null when there is no reliable reading. */
+  function update(z) {
+    const kind = z ? KIND[z] : null;
+    if (!kind) { stopAll(); return; }                       // normal, or no number: no siren
+    if (repeatTimer && KIND[zone] === kind) { zone = z; return; }   // same siren already going (e.g. elevated -> high)
+    zone = z; clearInterval(repeatTimer);
+    burst(kind);
+    repeatTimer = setInterval(() => burst(KIND[zone]), 10000);
+  }
+  function setMuted(m) { muted = m; try { localStorage.setItem("siren", m ? "off" : "on"); } catch (e) { /* ignore */ } if (m) silence(); else if (zone) burst(KIND[zone]); }
+  return { prime, update, stopAll, setMuted, get muted() { return muted; }, get playing() { return !!nodes; }, get kind() { return nodes ? nodes.kind : null; } };
+})();
+function paintSirenBtn() {
+  const b = $("#sirenBtn"), on = !siren.muted;
+  b.setAttribute("aria-pressed", String(on)); b.querySelector("span").textContent = on ? "Siren on" : "Siren off";
+}
+$("#sirenBtn").onclick = () => { siren.prime(); siren.setMuted(!siren.muted); paintSirenBtn(); };
+paintSirenBtn();
+
+/* ---------------------------------------------------------------- live vitals */
+let vStream = null, vWs = null, vBuf = [], vFlush = null, vRun = false;
+async function startVitals() {
+  siren.prime();                                   // inside the click: lets the browser play sound later
+  try { vStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 }, frameRate: { ideal: 30 } }, audio: false }); }
+  catch (e) { $("#vStatus").textContent = "Camera unavailable: " + e.message; return; }
+  const v = $("#vVideo"); v.srcObject = vStream; await v.play();
+  $("#vStage").classList.remove("hidden"); $("#vStart").classList.add("hidden"); $("#vStop").classList.remove("hidden");
+  const proto = location.protocol === "https:" ? "wss" : "ws";
+  const q = new URLSearchParams(); if (token) q.set("token", token);
+  vWs = new WebSocket(`${proto}://${location.host}/ws/vitals?${q}`);
+  vWs.onopen = () => { $("#vStatus").textContent = "Measuring…"; };
+  vWs.onmessage = ev => showVitals(JSON.parse(ev.data));
+  vWs.onclose = ev => { if (vRun) $("#vStatus").textContent = ev.code === 4401 ? "Sign in required" : "Disconnected"; };
+  vRun = true; vBuf = [];
+  const c = $("#vGrab"), ctx = c.getContext("2d", { willReadFrequently: true }); c.width = 160; c.height = 120;
+  const cx = 80, cy = 60, rx = 0.22 * 160, ry = 0.36 * 120;    // same oval as the server
+  const sample = () => {
+    if (!vRun) return;
+    ctx.drawImage(v, 0, 0, c.width, c.height);
+    const d = ctx.getImageData(0, 0, c.width, c.height).data;
+    let sr = 0, sg = 0, sb = 0, ns = 0, no = 0;
+    for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) {
+      const dx = (x - cx) / rx, dy = (y - cy) / ry; if (dx * dx + dy * dy > 1) continue;
+      no++; const i = (y * c.width + x) * 4, R = d[i], G = d[i + 1], B = d[i + 2];
+      const Y = 0.299 * R + 0.587 * G + 0.114 * B, Cr = (R - Y) * 0.713 + 128, Cb = (B - Y) * 0.564 + 128;
+      if (Y >= 40 && Cr >= 133 && Cr <= 173 && Cb >= 77 && Cb <= 127) { sr += R; sg += G; sb += B; ns++; }
+    }
+    vBuf.push(ns >= 50 ? [performance.now(), sr / ns, sg / ns, sb / ns, ns / no] : [performance.now(), 0, 0, 0, 0]);
+    if ("requestVideoFrameCallback" in v) v.requestVideoFrameCallback(sample); else setTimeout(sample, 33);
+  };
+  sample();
+  vFlush = setInterval(() => { if (vWs && vWs.readyState === 1 && vBuf.length) vWs.send(JSON.stringify({ samples: vBuf.splice(0, 200) })); }, 500);
+}
+function stopVitals() {
+  vRun = false; clearInterval(vFlush); vHist = []; siren.stopAll();
+  if (vWs) { vWs.close(); vWs = null; }
+  if (vStream) { vStream.getTracks().forEach(t => t.stop()); vStream = null; }
+  $("#vStage").classList.add("hidden"); $("#vStart").classList.remove("hidden"); $("#vStop").classList.add("hidden");
+  $("#vStatus").textContent = "";
+}
+let vHist = [];
+const VZONES = [[30, 40, "danger"], [40, 60, "low"], [60, 100, "normal"], [100, 120, "elev"], [120, 150, "high"], [150, 180, "danger"]];
+function scaleHtml(bpm) {
+  const lo = 30, hi = 180, pct = v => (Math.min(hi, Math.max(lo, v)) - lo) / (hi - lo) * 100;
+  const col = { danger: "var(--fail)", low: "var(--review)", normal: "var(--pass)", elev: "var(--review)", high: "color-mix(in srgb,var(--review) 45%,var(--fail))" };
+  return `<div class="scalewrap"><div class="marker" style="left:${pct(bpm)}%"><b>${bpm}</b></div>
+    <div class="scale">${VZONES.map(([a, b, k]) => `<i style="width:${(b - a) / (hi - lo) * 100}%;background:${col[k]}"></i>`).join("")}</div>
+    <div class="ticks">${[40, 60, 100, 120, 150].map(v => `<span style="left:${pct(v)}%">${v}</span>`).join("")}</div></div>`;
+}
+function showVitals(d) {
+  if (d.error) { $("#vOut").textContent = d.error; return; }
+  const foot = `<p class="muted" style="margin-top:12px">${esc(d.disclaimer || "")}</p>`;
+  let html;
+  if (d.status === "ok" && d.bpm != null) {
+    lastVitals = { bpm: d.bpm, confidence: d.confidence };
+    const lvl = d.level || "normal";
+    vHist.push({ bpm: d.bpm, level: lvl }); if (vHist.length > 10) vHist.shift();
+    siren.update(d.zone || null);
+    html = `<div class="vital">
+      <div class="vtop"><div class="bpm">${d.bpm}<span class="unit"> bpm</span></div><span class="zone ${esc(lvl)}">${esc(d.zone_label || "")}</span></div>
+      ${scaleHtml(d.bpm)}
+      ${lvl === "danger" ? `<div class="alert-danger">${esc(d.interpretation)}</div>` : `<p>${esc(d.interpretation)}</p>`}
+      <div class="muted">Resting adult: normal 60–100 · danger below 40 or above 150</div>
+      <div class="muted">Confidence ${Math.round(d.confidence * 100)}% · ${d.stable ? "steady" : "settling"}</div>
+      <div class="chips-h">${vHist.map(x => `<span class="${esc(x.level)}">${x.bpm}</span>`).join("")}</div></div>`;
+  } else if (d.status === "collecting") {
+    siren.stopAll();
+    html = `<div>Measuring… ${d.seconds} / ${d.needed_seconds} s</div><div class="bar" style="margin-top:8px"><i style="width:${Math.min(100, d.seconds / d.needed_seconds * 100)}%"></i></div>`;
+  } else if (d.status === "no_face") { siren.stopAll(); html = `<div>${badge("INCONCLUSIVE")} No face in the oval. Centre your face and add front light.</div>`; }
+  else { siren.stopAll(); html = `<div>${badge("INCONCLUSIVE")} No clear reading yet. Keep still in even light.</div>`; }
+  const warn = (d.warnings || []).map(w => `<div class="muted">• ${esc(w)}</div>`).join("");
+  $("#vOut").innerHTML = html + warn + foot;
+}
+$("#vStart").onclick = startVitals; $("#vStop").onclick = stopVitals;
+
+/* --------------------------------------------------------------------- boot */
+initAuth().then(() => { refresh(); timer = setInterval(() => { if (activeTab() === "overview" && !document.hidden && !document.body.classList.contains("signed-out")) refresh(); }, 5000); });
+</script>
+</body>
+</html>

@@ -1,0 +1,95 @@
+{
+  "title": "Skin lesion screen (dermatoscope)",
+  "labels": [
+    "benign",
+    "suspicious"
+  ],
+  "concern_labels": [
+    "suspicious"
+  ],
+  "arch": "resnet18",
+  "input_size": 160,
+  "mean": [
+    0.485,
+    0.456,
+    0.406
+  ],
+  "std": [
+    0.229,
+    0.224,
+    0.225
+  ],
+  "multilabel": false,
+  "min_confidence": 0.4,
+  "temperature": 1.7626,
+  "tta": true,
+  "moderate_threshold": 0.4511,
+  "high_threshold": 0.7878,
+  "threshold_source": "validation: MODERATE for 90% sensitivity, HIGH for 95% specificity (optimistic: re-test on a fresh test set)",
+  "training_data": "HAM10000 dermatoscope images (CC BY-NC 4.0, non-commercial); does not transfer to phone photos",
+  "min_sharpness": 6.4,
+  "min_brightness": 40.0,
+  "min_side": 144,
+  "validation": {
+    "n_images": 372,
+    "accuracy": 0.8844086021505376,
+    "macro_auc": 0.955026455026455,
+    "calibration_ece_before": 0.0563,
+    "calibration_ece_after": 0.0456,
+    "per_class": {
+      "benign": {
+        "n": 210,
+        "sensitivity": 0.8904761904761904,
+        "specificity": 0.8765432098765432,
+        "auc": 0.955026455026455
+      },
+      "suspicious": {
+        "n": 162,
+        "sensitivity": 0.8765432098765432,
+        "specificity": 0.8904761904761904,
+        "auc": 0.955026455026455
+      }
+    },
+    "note": "Internal validation split only (the same split chose the checkpoint, temperature and thresholds, so it is optimistic). Not clinical validation: run scripts/evaluate_classifier.py on a locked test set.",
+    "locked_test": {
+      "n_images": 514,
+      "positives": 229,
+      "negatives": 285,
+      "auc": 0.9588493993690655,
+      "auc_ci95": [
+        0.9442611713455812,
+        0.9722111333786726
+      ],
+      "ece": 0.037738378480787746,
+      "inconclusive_rate": 0.007782101167315175,
+      "moderate": {
+        "threshold": 0.4511,
+        "sensitivity": 0.8951965065502183,
+        "sensitivity_ci95": [
+          0.854251012145749,
+          0.9330357142857143
+        ],
+        "specificity": 0.8421052631578947,
+        "specificity_ci95": [
+          0.797942423717917,
+          0.8823581745865606
+        ]
+      },
+      "high": {
+        "threshold": 0.7878,
+        "sensitivity": 0.7292576419213974,
+        "sensitivity_ci95": [
+          0.669525236760898,
+          0.7869728741823778
+        ],
+        "specificity": 0.9719298245614035,
+        "specificity_ci95": [
+          0.9534820980424963,
+          0.9894393801835403
+        ]
+      },
+      "gate": "installed because the lower 95% AUC bound >= 0.7",
+      "note": "Measured on a held-out split of the SAME public dataset. Not clinical validation; accuracy on real patients or other cameras can be far lower."
+    }
+  }
+}

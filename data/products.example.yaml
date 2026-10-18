@@ -1,0 +1,13 @@
+# Example YOLO dataset description. Copy to data/products.yaml and edit.
+path: data/products          # dataset root
+train: images/train
+val: images/val
+names:
+  0: phone
+  1: laptop
+  2: watch
+  3: tablet
+  4: crack
+  5: scratch
+  6: dent
+  7: missing_screw
