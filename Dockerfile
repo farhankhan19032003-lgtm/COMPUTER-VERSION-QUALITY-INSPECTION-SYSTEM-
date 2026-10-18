@@ -10,8 +10,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 ARG TORCH_INDEX=https://download.pytorch.org/whl/cpu
 ARG INSTALL_EXTRAS=true
 
+# libgl1, libxcb1, libsm6, libxext6, libxrender1: ultralytics pulls in the full opencv-python next to
+# opencv-python-headless, and the full build needs these system libraries to import cv2 (without them the app
+# dies on start with "libxcb.so.1: cannot open shared object file").
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        libglib2.0-0 curl \
+        libglib2.0-0 libgl1 libxcb1 libsm6 libxext6 libxrender1 curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /srv
@@ -20,6 +23,12 @@ COPY requirements.txt requirements-extra.txt ./
 RUN pip install torch torchvision --index-url ${TORCH_INDEX} \
     && pip install -r requirements.txt \
     && if [ "$INSTALL_EXTRAS" = "true" ]; then pip install -r requirements-extra.txt; fi
+
+# Keep ONLY the headless OpenCV (no GUI libraries needed), then fail the build here, not at start-up, if cv2 or
+# torch cannot be imported.
+RUN pip uninstall -y opencv-python opencv-contrib-python || true \
+    && pip install --force-reinstall --no-deps opencv-python-headless \
+    && python -c "import cv2, torch, numpy; print('cv2', cv2.__version__, '| torch', torch.__version__)"
 
 COPY app ./app
 COPY scripts ./scripts
