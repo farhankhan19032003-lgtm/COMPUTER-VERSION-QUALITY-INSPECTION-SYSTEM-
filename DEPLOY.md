@@ -60,6 +60,30 @@ Open the URL in a browser, sign in, upload a photo on the Inspect tab. `/ready` 
 - There is no rate limiting in the app. Render's free tier of protection is basic; add a limit (a proxy or a Render
   firewall rule) before real users upload photos.
 
+## Staying up on a small server
+
+On a shared host the app can be restarted (visitors see "502 Bad Gateway" for about half a minute) if many photos are analysed
+at the same moment or PyTorch starts more CPU threads than the plan has. Two settings control this; the defaults are
+safe, change them only if you have more CPU:
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `TORCH_THREADS` | `0` (= 2) | CPU threads PyTorch and OpenCV may use. Use `1` on a single-CPU plan. |
+| `MAX_CONCURRENT_INFERENCE` | `2` | Photos analysed at the same time; the rest wait. Use `1` on a single-CPU plan. |
+
+`/ready` now also tells you what actually loaded (no login needed):
+`"product_classifier": true`, `"screening_models": ["chest_xray","malaria_smear","retina_dr","skin_lesion"]`,
+`"torch_threads"`, `"max_concurrent_inference"`. If `product_classifier` is `false`, auto-detect has fallen back to YOLO only.
+
+If the service still restarts, open the service's **Events** tab (reason such as "out of memory" or "failed health check")
+and **Metrics, Memory**; that tells you whether to move to a bigger plan.
+
+## Using it on phones and tablets
+
+Open the Render address in the phone's browser and sign in. The dashboard is responsive, and the camera buttons use the
+rear camera on phones (the pulse check uses the front camera). Browsers only allow the camera on **HTTPS**, which Render
+provides; it will not work over plain `http://`. Grant the camera permission when the browser asks.
+
 ## What to know
 
 - **First request after a restart is slow** (about 10 to 20 s): models load on first use.

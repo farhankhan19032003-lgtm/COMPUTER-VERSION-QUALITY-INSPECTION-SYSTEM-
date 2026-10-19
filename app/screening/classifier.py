@@ -20,7 +20,7 @@ import torch.nn as nn
 import torchvision
 
 from ..inspection.cv_defects import assess_quality
-from ..utils import encode_jpeg, resolve_device
+from ..utils import INFERENCE_GATE, encode_jpeg, resolve_device
 from .calibration import MahalanobisOOD, final_linear
 from .catalog import CATALOG, DISCLAIMER
 
@@ -165,6 +165,10 @@ class ScreeningModel:
         return (cam - cam.min()) / (cam.max() - cam.min() + 1e-8)
 
     def predict(self, img_bgr: np.ndarray, explain: bool = False) -> ScreeningResult:
+        with INFERENCE_GATE:                       # shares the limit with photo inspection
+            return self._predict(img_bgr, explain)
+
+    def _predict(self, img_bgr: np.ndarray, explain: bool = False) -> ScreeningResult:
         import time
 
         t0 = time.perf_counter()

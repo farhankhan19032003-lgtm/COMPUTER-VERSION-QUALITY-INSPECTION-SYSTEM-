@@ -82,3 +82,27 @@ def test_fail_needs_trusted_evidence():
     assert v == "REVIEW" and "very different" in why                            # photo unlike the bank
     assert verdict({}, ratio=2.0)[0] == "FAIL"                                  # a real same-rig defect still fails
     assert verdict({}, source="classifier")[0] == "REVIEW"                      # product never located
+
+
+def test_inference_gate_limits_how_many_analyses_run_together():
+    """Small hosts: only `n` photos may be analysed at once, so a burst cannot starve /health or exhaust memory."""
+    import threading
+    import time
+
+    from app.utils import InferenceGate
+
+    gate, running, peak, lock = InferenceGate(2), [0], [0], threading.Lock()
+
+    def work():
+        with gate:
+            with lock:
+                running[0] += 1
+                peak[0] = max(peak[0], running[0])
+            time.sleep(0.05)
+            with lock:
+                running[0] -= 1
+
+    threads = [threading.Thread(target=work) for _ in range(8)]
+    [t.start() for t in threads]
+    [t.join() for t in threads]
+    assert peak[0] == 2 and running[0] == 0

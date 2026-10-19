@@ -2,10 +2,54 @@
 from __future__ import annotations
 
 import io
+import os
+import threading
 from typing import Optional, Tuple
 
 import cv2
 import numpy as np
+
+
+class InferenceGate:
+    """Lets only a few photos be analysed at once.
+
+    The routes already run the heavy work in a thread pool (up to 40 threads). Without a limit a live camera or a burst
+    of uploads runs dozens of PyTorch inferences at the same time: memory grows, a small CPU is shared out so thinly that
+    even /health answers late, and the host (Render) restarts the service, which the browser sees as a 502."""
+
+    def __init__(self, n: int = 2) -> None:
+        self.n = max(1, n)
+        self._sem = threading.BoundedSemaphore(self.n)
+
+    def resize(self, n: int) -> None:
+        """Only call at start-up, before any request is running."""
+        self.n = max(1, n)
+        self._sem = threading.BoundedSemaphore(self.n)
+
+    def __enter__(self):
+        self._sem.acquire()
+        return self
+
+    def __exit__(self, *exc) -> None:
+        self._sem.release()
+
+
+INFERENCE_GATE = InferenceGate()
+
+
+def configure_runtime(torch_threads: int = 0, max_concurrent: int = 2) -> dict:
+    """Cap the CPU threads PyTorch / OpenCV use and how many inferences run together. 0 threads = 2 (or fewer cores).
+
+    On a shared host os.cpu_count() reports the whole machine, not the slice you pay for, so PyTorch would start far more
+    threads than the CPU quota can run."""
+    import cv2
+    import torch
+
+    n = torch_threads if torch_threads > 0 else min(2, os.cpu_count() or 1)
+    torch.set_num_threads(n)
+    cv2.setNumThreads(n)
+    INFERENCE_GATE.resize(max_concurrent)
+    return {"torch_threads": n, "max_concurrent_inference": INFERENCE_GATE.n}
 
 
 def resolve_device(setting: str = "auto") -> str:

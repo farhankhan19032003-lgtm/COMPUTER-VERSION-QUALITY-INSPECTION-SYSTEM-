@@ -158,3 +158,9 @@ def test_websocket_requires_token(secure_client):
     with secure_client.websocket_connect(f"/ws/stream?token={token()}") as ws:
         ws.send_bytes(jpeg(make_phone(1)))
         assert "verdict" in ws.receive_json()
+
+
+def test_ready_reports_what_loaded(client):
+    r = client.get("/ready").json()
+    assert r["status"] == "ready" and "product_classifier" in r and isinstance(r["screening_models"], list)
+    assert r["torch_threads"] >= 1 and r["max_concurrent_inference"] >= 1

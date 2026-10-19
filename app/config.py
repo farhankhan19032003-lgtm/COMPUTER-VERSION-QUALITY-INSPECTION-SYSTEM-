@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     # scored 6 to 9 against a bank built from drawings; a same-rig defect scores a few), so it is not damage evidence.
     require_bank_for_fail: bool = True
     anomaly_trust_ratio: float = 6.5
+    # CPU limits for small hosts (see app/utils.py InferenceGate). 0 threads = 2 (or fewer cores).
+    torch_threads: int = 0
+    max_concurrent_inference: int = 2
     # Small ONNX face detector (OpenCV YuNet) so close-up faces count as a person. Optional: missing file = skipped.
     face_model: str = "models/face/face_detection_yunet_2023mar.onnx"
     # Names products YOLO's COCO classes lack (headphones, tablets, watches). Optional: no file = YOLO only.

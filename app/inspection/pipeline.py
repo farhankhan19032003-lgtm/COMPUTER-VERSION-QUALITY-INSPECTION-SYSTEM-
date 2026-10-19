@@ -10,7 +10,7 @@ import numpy as np
 
 from ..config import Settings
 from ..repair.advice import build_advice
-from ..utils import clip_box, encode_jpeg
+from ..utils import INFERENCE_GATE, clip_box, encode_jpeg
 from .anomaly import AnomalyRegistry, AnomalyResult
 from .cv_defects import assess_quality, find_defects, foreground_mask
 from .detector import ProductDetector
@@ -48,7 +48,11 @@ class InspectionPipeline:
         x1, y1, x2, y2 = self._padded(det.bbox, img.shape)
         return img[y1:y2, x1:x2], det
 
-    def inspect(
+    def inspect(self, img: np.ndarray, product_hint: Optional[str] = None, annotate: bool = True) -> InspectionResult:
+        with INFERENCE_GATE:                       # at most a few photos analysed at once (small hosts)
+            return self._inspect(img, product_hint, annotate)
+
+    def _inspect(
         self,
         img: np.ndarray,
         product_hint: Optional[str] = None,

@@ -17,7 +17,7 @@ from .inspection.pipeline import InspectionPipeline
 from .metrics import Metrics
 from .routes import analytics, diagnostics, feedback, inspect, patients, report, screening, stream, vitals
 from .screening.classifier import ScreeningRegistry
-from .utils import resolve_device
+from .utils import configure_runtime, resolve_device
 
 STATIC = Path(__file__).parent / "static"
 
@@ -32,6 +32,7 @@ def create_app(settings: Optional[Settings] = None, store: Optional[Store] = Non
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         device = resolve_device(settings.device)
+        runtime = configure_runtime(settings.torch_threads, settings.max_concurrent_inference)
         st = store or build_store(settings)
         pipeline = InspectionPipeline(settings)
         app.state.ctx = AppState(
@@ -41,7 +42,8 @@ def create_app(settings: Optional[Settings] = None, store: Optional[Store] = Non
             screening=ScreeningRegistry(settings.screening_model_dir, settings.device),
             metrics=Metrics(device),
         )
-        st.log_event("INFO", "Service started", {"device": device, **pipeline.status()})
+        app.state.runtime = runtime
+        st.log_event("INFO", "Service started", {"device": device, **runtime, **pipeline.status()})
         log.info("VisionInspect ready (device=%s, store=%s)", device, st.name)
         yield
         st.log_event("INFO", "Service stopped")
@@ -86,7 +88,13 @@ def create_app(settings: Optional[Settings] = None, store: Optional[Store] = Non
     async def ready(request: Request):
         ctx: AppState = request.app.state.ctx
         ok = ctx.store.ping()
-        body = {"status": "ready" if ok else "degraded", "store": ctx.store.name, **ctx.pipeline.status()}
+        body = {
+            "status": "ready" if ok else "degraded", "store": ctx.store.name, **ctx.pipeline.status(),
+            # what actually loaded, so a deploy can be checked without signing in
+            "product_classifier": bool(ctx.pipeline.detector.classifier.ok),
+            "screening_models": ctx.screening.installed(),
+            **getattr(request.app.state, "runtime", {}),
+        }
         return JSONResponse(body, status_code=200 if ok else 503)
 
     @app.get("/api/v1/config", tags=["system"])
