@@ -17,6 +17,7 @@ from .inspection.pipeline import InspectionPipeline
 from .metrics import Metrics
 from .routes import analytics, diagnostics, feedback, inspect, patients, report, screening, stream, vitals
 from .screening.classifier import ScreeningRegistry
+from . import warmup
 from .utils import configure_runtime, resolve_device
 
 STATIC = Path(__file__).parent / "static"
@@ -43,6 +44,9 @@ def create_app(settings: Optional[Settings] = None, store: Optional[Store] = Non
             metrics=Metrics(device),
         )
         app.state.runtime = runtime
+        app.state.warmup = {"status": "off"}
+        if settings.warmup:
+            warmup.start(pipeline, app.state.warmup)
         st.log_event("INFO", "Service started", {"device": device, **runtime, **pipeline.status()})
         log.info("VisionInspect ready (device=%s, store=%s)", device, st.name)
         yield
@@ -94,6 +98,8 @@ def create_app(settings: Optional[Settings] = None, store: Optional[Store] = Non
             "product_classifier": bool(ctx.pipeline.detector.classifier.ok),
             "screening_models": ctx.screening.installed(),
             **getattr(request.app.state, "runtime", {}),
+            "warmup": getattr(request.app.state, "warmup", {"status": "off"}),
+            "memory_mb": warmup.rss_mb(),
         }
         return JSONResponse(body, status_code=200 if ok else 503)
 

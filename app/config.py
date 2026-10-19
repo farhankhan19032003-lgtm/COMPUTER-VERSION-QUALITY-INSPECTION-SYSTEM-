@@ -37,6 +37,8 @@ class Settings(BaseSettings):
     # CPU limits for small hosts (see app/utils.py InferenceGate). 0 threads = 2 (or fewer cores).
     torch_threads: int = 0
     max_concurrent_inference: int = 2
+    # Load every model in a background thread right after start-up (the Dockerfile turns this on; tests leave it off).
+    warmup: bool = False
     # Small ONNX face detector (OpenCV YuNet) so close-up faces count as a person. Optional: missing file = skipped.
     face_model: str = "models/face/face_detection_yunet_2023mar.onnx"
     # Names products YOLO's COCO classes lack (headphones, tablets, watches). Optional: no file = YOLO only.

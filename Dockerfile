@@ -51,7 +51,11 @@ RUN useradd -m appuser && mkdir -p /srv/data && chown -R appuser /srv
 USER appuser
 
 # Render (and most hosts) tell the app which port to use through $PORT; locally it stays 8000.
+# WARMUP loads every model in the background right after start-up (shown in /ready). MALLOC_ARENA_MAX stops glibc from
+# keeping a separate memory pool per thread, which makes a threaded PyTorch service grow far past its real need.
 ENV PORT=8000
+ENV WARMUP=true
+ENV MALLOC_ARENA_MAX=2
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
     CMD curl -fsS http://localhost:${PORT}/health || exit 1

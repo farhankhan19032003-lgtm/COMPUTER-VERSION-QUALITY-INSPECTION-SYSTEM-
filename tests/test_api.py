@@ -164,3 +164,14 @@ def test_ready_reports_what_loaded(client):
     r = client.get("/ready").json()
     assert r["status"] == "ready" and "product_classifier" in r and isinstance(r["screening_models"], list)
     assert r["torch_threads"] >= 1 and r["max_concurrent_inference"] >= 1
+
+
+def test_warmup_loads_every_stage_and_reports(tmp_path):
+    from app import warmup
+    from app.inspection.pipeline import InspectionPipeline
+
+    pipe = InspectionPipeline(Settings(_env_file=None, device="cpu", yolo_weights="__none__.pt", anomaly_bank_dir=str(tmp_path / "a")))
+    state = {}
+    warmup.run(pipe, state)
+    assert state["status"] == "ok" and set(state["stages"]) == {"detect_and_checks_s", "product_classifier_s", "anomaly_s"}
+    assert state["seconds"] >= 0 and state["rss_mb"] > 0

@@ -75,6 +75,11 @@ safe, change them only if you have more CPU:
 `"product_classifier": true`, `"screening_models": ["chest_xray","malaria_smear","retina_dr","skin_lesion"]`,
 `"torch_threads"`, `"max_concurrent_inference"`. If `product_classifier` is `false`, auto-detect has fallen back to YOLO only.
 
+Every model is also loaded once in the background right after start-up (`WARMUP=true`, set in the Dockerfile), so the first
+photo is not slow. `/ready` shows the result: `"warmup": {"status": "running"}` for the first seconds, then
+`{"status": "ok", "stages": {...}, "seconds": ..., "rss_mb": ...}`, or `{"status": "error", "error": "..."}` with the reason.
+`"memory_mb"` is the memory the app uses right now: if it gets close to your plan's limit, move to a bigger plan.
+
 If the service still restarts, open the service's **Events** tab (reason such as "out of memory" or "failed health check")
 and **Metrics, Memory**; that tells you whether to move to a bigger plan.
 
