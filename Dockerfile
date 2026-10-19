@@ -30,6 +30,14 @@ RUN pip uninstall -y opencv-python opencv-contrib-python || true \
     && pip install --force-reinstall --no-deps opencv-python-headless \
     && python -c "import cv2, torch, numpy; print('cv2', cv2.__version__, '| torch', torch.__version__)"
 
+# ImageNet weights the app would otherwise download from the internet on the first request (ResNet18 for the anomaly
+# backbone, ResNet50 for naming the product, about 145 MB). Baking them in means a slow or blocked download can neither
+# delay the first photo nor silently switch auto-detect off. They sit outside /srv and are world-readable.
+ENV TORCH_HOME=/opt/torch
+RUN python -c "import torchvision as tv; tv.models.resnet18(weights=tv.models.ResNet18_Weights.IMAGENET1K_V1); tv.models.resnet50(weights=tv.models.ResNet50_Weights.DEFAULT)" \
+    && chmod -R a+rX /opt/torch \
+    && ls -l /opt/torch/hub/checkpoints
+
 COPY app ./app
 COPY scripts ./scripts
 COPY tests ./tests
