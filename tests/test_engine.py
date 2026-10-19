@@ -106,3 +106,23 @@ def test_inference_gate_limits_how_many_analyses_run_together():
     [t.start() for t in threads]
     [t.join() for t in threads]
     assert peak[0] == 2 and running[0] == 0
+
+
+def test_cpu_quota_is_read_from_the_container_limits(monkeypatch, tmp_path):
+    import builtins
+
+    from app.utils import cgroup_cpus
+
+    real = builtins.open
+    quota = tmp_path / "cpu.max"
+
+    def fake_open(f, *a, **k):
+        return real(quota if str(f).replace("\\", "/") == "/sys/fs/cgroup/cpu.max" else "/nonexistent", *a, **k)
+
+    monkeypatch.setattr(builtins, "open", fake_open)
+    quota.write_text("100000 100000")
+    assert cgroup_cpus() == 1.0
+    quota.write_text("50000 100000")
+    assert cgroup_cpus() == 0.5
+    quota.write_text("max 100000")
+    assert cgroup_cpus() is None

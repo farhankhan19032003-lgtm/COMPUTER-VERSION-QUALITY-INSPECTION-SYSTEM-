@@ -56,6 +56,8 @@ USER appuser
 ENV PORT=8000
 ENV WARMUP=true
 ENV MALLOC_ARENA_MAX=2
+# OpenMP threads spin while waiting; under a CPU quota that only burns the quota and gets the container throttled.
+ENV OMP_WAIT_POLICY=PASSIVE
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
     CMD curl -fsS http://localhost:${PORT}/health || exit 1

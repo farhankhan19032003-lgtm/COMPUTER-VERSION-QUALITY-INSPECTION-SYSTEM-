@@ -173,5 +173,28 @@ def test_warmup_loads_every_stage_and_reports(tmp_path):
     pipe = InspectionPipeline(Settings(_env_file=None, device="cpu", yolo_weights="__none__.pt", anomaly_bank_dir=str(tmp_path / "a")))
     state = {}
     warmup.run(pipe, state)
-    assert state["status"] == "ok" and set(state["stages"]) == {"detect_and_checks_s", "product_classifier_s", "anomaly_s"}
-    assert state["seconds"] >= 0 and state["rss_mb"] > 0
+    assert state["status"] == "ok" and set(state["stages"]) == {"detect_and_checks_s", "product_classifier_s", "anomaly_s", "one_normal_photo_s"}
+    assert state["seconds"] >= 0 and state["rss_mb"] > 0 and state["cpu_matmul_ms"] > 0
+
+
+def test_requests_get_a_clear_503_while_models_load_or_when_busy(client):
+    """Not a proxy timeout (502): a quick, readable answer the page can show."""
+    from app import warmup
+    from app.utils import INFERENCE_GATE
+
+    body = dict(files={"file": ("p.jpg", jpeg(make_phone(1)), "image/jpeg")})
+    warmup.STATE["status"] = "running"
+    try:
+        r = client.post("/api/v1/inspect", **body)
+        assert r.status_code == 503 and "loading" in r.json()["detail"] and r.headers["retry-after"]
+    finally:
+        warmup.STATE["status"] = "off"
+    old_n, old_t = INFERENCE_GATE.n, INFERENCE_GATE.timeout
+    INFERENCE_GATE.resize(1, 0.05)
+    INFERENCE_GATE._sem.acquire()                                  # every analysis slot is taken
+    try:
+        r = client.post("/api/v1/inspect", **body)
+        assert r.status_code == 503 and "busy" in r.json()["detail"]
+    finally:
+        INFERENCE_GATE._sem.release()
+        INFERENCE_GATE.resize(old_n, old_t)

@@ -33,7 +33,7 @@ def create_app(settings: Optional[Settings] = None, store: Optional[Store] = Non
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         device = resolve_device(settings.device)
-        runtime = configure_runtime(settings.torch_threads, settings.max_concurrent_inference)
+        runtime = configure_runtime(settings.torch_threads, settings.max_concurrent_inference, settings.inference_wait_seconds)
         st = store or build_store(settings)
         pipeline = InspectionPipeline(settings)
         app.state.ctx = AppState(
@@ -44,9 +44,13 @@ def create_app(settings: Optional[Settings] = None, store: Optional[Store] = Non
             metrics=Metrics(device),
         )
         app.state.runtime = runtime
-        app.state.warmup = {"status": "off"}
         if settings.warmup:
-            warmup.start(pipeline, app.state.warmup)
+            warmup.STATE.clear()
+            warmup.STATE["status"] = "running"
+            warmup.start(pipeline, warmup.STATE)
+        else:
+            warmup.STATE.clear()
+            warmup.STATE["status"] = "off"
         st.log_event("INFO", "Service started", {"device": device, **runtime, **pipeline.status()})
         log.info("VisionInspect ready (device=%s, store=%s)", device, st.name)
         yield
@@ -98,7 +102,7 @@ def create_app(settings: Optional[Settings] = None, store: Optional[Store] = Non
             "product_classifier": bool(ctx.pipeline.detector.classifier.ok),
             "screening_models": ctx.screening.installed(),
             **getattr(request.app.state, "runtime", {}),
-            "warmup": getattr(request.app.state, "warmup", {"status": "off"}),
+            "warmup": dict(warmup.STATE),
             "memory_mb": warmup.rss_mb(),
         }
         return JSONResponse(body, status_code=200 if ok else 503)

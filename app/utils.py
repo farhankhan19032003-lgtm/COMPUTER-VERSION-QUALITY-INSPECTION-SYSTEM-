@@ -10,24 +10,32 @@ import cv2
 import numpy as np
 
 
+class ServerBusy(RuntimeError):
+    """No analysis slot became free in time. Routes turn this into a clear 503 instead of a proxy timeout (502)."""
+
+
 class InferenceGate:
-    """Lets only a few photos be analysed at once.
+    """Lets only a few photos be analysed at once, and makes the rest wait for a limited time.
 
-    The routes already run the heavy work in a thread pool (up to 40 threads). Without a limit a live camera or a burst
-    of uploads runs dozens of PyTorch inferences at the same time: memory grows, a small CPU is shared out so thinly that
-    even /health answers late, and the host (Render) restarts the service, which the browser sees as a 502."""
+    The routes run the heavy work in a thread pool (up to 40 threads). Without a limit a live camera or a burst of
+    uploads runs dozens of PyTorch inferences together: memory grows, a small CPU is shared out so thinly that even
+    /health answers late, and the host (Render) restarts the service, which the browser sees as a 502. Waiting at most
+    `timeout` seconds and then answering "busy" also keeps every request well under the proxy's own time limit."""
 
-    def __init__(self, n: int = 2) -> None:
+    def __init__(self, n: int = 1, timeout: Optional[float] = None) -> None:
         self.n = max(1, n)
+        self.timeout = timeout
         self._sem = threading.BoundedSemaphore(self.n)
 
-    def resize(self, n: int) -> None:
+    def resize(self, n: int, timeout: Optional[float] = None) -> None:
         """Only call at start-up, before any request is running."""
         self.n = max(1, n)
+        self.timeout = timeout
         self._sem = threading.BoundedSemaphore(self.n)
 
     def __enter__(self):
-        self._sem.acquire()
+        if not self._sem.acquire(timeout=self.timeout):
+            raise ServerBusy(f"no analysis slot free after {self.timeout}s")
         return self
 
     def __exit__(self, *exc) -> None:
@@ -37,19 +45,46 @@ class InferenceGate:
 INFERENCE_GATE = InferenceGate()
 
 
-def configure_runtime(torch_threads: int = 0, max_concurrent: int = 2) -> dict:
-    """Cap the CPU threads PyTorch / OpenCV use and how many inferences run together. 0 threads = 2 (or fewer cores).
+def cgroup_cpus() -> Optional[float]:
+    """CPUs this container may really use (Docker/Render limit), or None when unlimited / unknown. os.cpu_count() only
+    reports the whole host, so PyTorch would start far more threads than the quota can run and get throttled."""
+    try:
+        txt = open("/sys/fs/cgroup/cpu.max").read().split()          # cgroup v2: "<quota> <period>" or "max <period>"
+        if txt[0] != "max":
+            return int(txt[0]) / int(txt[1])
+    except Exception:
+        pass
+    try:                                                              # cgroup v1
+        q = int(open("/sys/fs/cgroup/cpu/cpu.cfs_quota_us").read())
+        per = int(open("/sys/fs/cgroup/cpu/cpu.cfs_period_us").read())
+        if q > 0 and per > 0:
+            return q / per
+    except Exception:
+        pass
+    return None
 
-    On a shared host os.cpu_count() reports the whole machine, not the slice you pay for, so PyTorch would start far more
-    threads than the CPU quota can run."""
+
+def configure_runtime(torch_threads: int = 0, max_concurrent: int = 0, wait_seconds: float = 45.0) -> dict:
+    """Size the CPU use to the CPUs this container really has.
+
+    torch_threads / max_concurrent of 0 mean automatic: one PyTorch thread and one analysis at a time when the container
+    has one CPU or less (a second thread would only be throttled), otherwise up to 2 threads."""
     import cv2
     import torch
 
-    n = torch_threads if torch_threads > 0 else min(2, os.cpu_count() or 1)
+    quota = cgroup_cpus()
+    cpus = quota if quota else float(os.cpu_count() or 1)
+    n = torch_threads if torch_threads > 0 else max(1, min(2, int(cpus)))
     torch.set_num_threads(n)
+    try:
+        torch.set_num_interop_threads(1)
+    except RuntimeError:
+        pass                                                          # already used in this process (tests)
     cv2.setNumThreads(n)
-    INFERENCE_GATE.resize(max_concurrent)
-    return {"torch_threads": n, "max_concurrent_inference": INFERENCE_GATE.n}
+    slots = max_concurrent if max_concurrent > 0 else (1 if cpus <= 1.5 else 2)
+    INFERENCE_GATE.resize(slots, wait_seconds)
+    return {"torch_threads": n, "max_concurrent_inference": slots, "cpu_count": os.cpu_count(),
+            "cpu_quota": round(quota, 2) if quota else None}
 
 
 def resolve_device(setting: str = "auto") -> str:
@@ -63,7 +98,7 @@ def resolve_device(setting: str = "auto") -> str:
     return setting
 
 
-def decode_image(data: bytes, max_side: int = 1920) -> np.ndarray:
+def decode_image(data: bytes, max_side: int = 1280) -> np.ndarray:
     """Decode bytes -> BGR uint8 image. Raises ValueError on garbage input."""
     if not data:
         raise ValueError("Empty file")

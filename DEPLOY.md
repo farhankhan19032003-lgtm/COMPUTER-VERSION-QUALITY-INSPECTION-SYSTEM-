@@ -68,8 +68,9 @@ safe, change them only if you have more CPU:
 
 | Variable | Default | Meaning |
 |---|---|---|
-| `TORCH_THREADS` | `0` (= 2) | CPU threads PyTorch and OpenCV may use. Use `1` on a single-CPU plan. |
-| `MAX_CONCURRENT_INFERENCE` | `2` | Photos analysed at the same time; the rest wait. Use `1` on a single-CPU plan. |
+| `TORCH_THREADS` | `0` (automatic) | CPU threads PyTorch and OpenCV may use. Automatic reads the container's CPU quota: 1 thread on a 1-CPU plan. |
+| `MAX_CONCURRENT_INFERENCE` | `0` (automatic) | Photos analysed at the same time; the rest wait. Automatic: 1 on a 1-CPU plan, otherwise 2. |
+| `INFERENCE_WAIT_SECONDS` | `45` | How long a photo waits for a free slot before the server answers 503 "busy" (so the proxy never times out with a 502). |
 
 `/ready` now also tells you what actually loaded (no login needed):
 `"product_classifier": true`, `"screening_models": ["chest_xray","malaria_smear","retina_dr","skin_lesion"]`,
@@ -78,6 +79,8 @@ safe, change them only if you have more CPU:
 Every model is also loaded once in the background right after start-up (`WARMUP=true`, set in the Dockerfile), so the first
 photo is not slow. `/ready` shows the result: `"warmup": {"status": "running"}` for the first seconds, then
 `{"status": "ok", "stages": {...}, "seconds": ..., "rss_mb": ...}`, or `{"status": "error", "error": "..."}` with the reason.
+While the models load (a few minutes after every restart on a small plan) uploads get a quick `503` with a readable message instead of a 502.
+`"cpu_quota"` is the CPUs your plan really gives the container; `"cpu_matmul_ms"` is a speed test (a laptop core takes about 15 to 30 ms; hundreds mean a very slow host); `"one_normal_photo_s"` is how long a normal photo takes once everything is loaded.
 `"memory_mb"` is the memory the app uses right now: if it gets close to your plan's limit, move to a bigger plan.
 
 If the service still restarts, open the service's **Events** tab (reason such as "out of memory" or "failed health check")

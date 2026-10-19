@@ -10,7 +10,8 @@ from fastapi.concurrency import run_in_threadpool
 from ..auth import User, current_user
 from ..deps import AppState, clean_product, data_uri, get_state, read_upload
 from ..inspection.types import InspectionResult
-from ..utils import decode_image
+from .. import warmup
+from ..utils import ServerBusy, decode_image
 from fastapi import Request
 
 log = logging.getLogger(__name__)
@@ -72,6 +73,7 @@ async def inspect_image(
     ctx: AppState = Depends(get_state),
     user: User = Depends(current_user),
 ):
+    warmup.require_ready()
     hint = clean_product(product_type)
     data = await read_upload(file, ctx.settings.max_upload_mb)
     try:
@@ -81,6 +83,8 @@ async def inspect_image(
 
     try:
         result = await run_in_threadpool(ctx.pipeline.inspect, img, hint, annotate)
+    except ServerBusy:
+        raise warmup.busy()
     except Exception:
         ctx.metrics.record_error()
         log.exception("Inspection failed")
@@ -105,6 +109,7 @@ async def inspect_batch(
     """Inspect up to 20 images in one call (no annotated images returned, to keep it light)."""
     if len(files) > MAX_BATCH:
         raise HTTPException(422, f"At most {MAX_BATCH} files per batch")
+    warmup.require_ready()
     hint = clean_product(product_type)
     out = []
     for f in files:
@@ -121,6 +126,8 @@ async def inspect_batch(
             entry["error"] = exc.detail
         except ValueError as exc:
             entry["error"] = str(exc)
+        except ServerBusy:
+            entry["error"] = warmup.BUSY_MSG
         except Exception:
             ctx.metrics.record_error()
             log.exception("Batch item failed")

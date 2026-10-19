@@ -11,7 +11,8 @@ from ..auth import User, current_user
 from ..deps import AppState, data_uri, get_state, read_upload
 from ..screening.catalog import DISCLAIMER
 from .patients import require_patient_storage
-from ..utils import decode_image
+from .. import warmup
+from ..utils import ServerBusy, decode_image
 
 log = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1/screen", tags=["screening"])
@@ -39,6 +40,7 @@ async def screen(
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Patient not found")
         if not patient.get("consent_given"):
             raise HTTPException(status.HTTP_403_FORBIDDEN, "No consent on file for this patient")
+    warmup.require_ready()
     model = ctx.screening.get(module)
     if model is None:
         raise HTTPException(
@@ -55,6 +57,8 @@ async def screen(
 
     try:
         res = await run_in_threadpool(model.predict, img, explain)
+    except ServerBusy:
+        raise warmup.busy()
     except Exception:
         ctx.metrics.record_error()
         log.exception("Screening failed")

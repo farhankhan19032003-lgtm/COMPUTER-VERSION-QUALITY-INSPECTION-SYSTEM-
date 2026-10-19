@@ -19,7 +19,8 @@ from fastapi.concurrency import run_in_threadpool
 
 from ..auth import resolve_user
 from ..inspection.temporal import TemporalSmoother
-from ..utils import decode_image
+from .. import warmup
+from ..utils import ServerBusy, decode_image
 from ..deps import clean_product
 from .inspect import persist_inspection, record
 from fastapi import HTTPException
@@ -51,11 +52,17 @@ async def stream(ws: WebSocket):
             if len(data) > MAX_FRAME_BYTES:
                 await ws.send_text(json.dumps({"error": "Frame too large"}))
                 continue
+            if warmup.loading():                      # models still loading after a restart: say so, drop the frame
+                await ws.send_text(json.dumps({"error": warmup.LOADING_MSG}))
+                continue
             try:
                 img = decode_image(data, max_side=1280)
                 result = await run_in_threadpool(ctx.pipeline.inspect, img, hint, annotate)
             except ValueError as exc:
                 await ws.send_text(json.dumps({"error": str(exc)}))
+                continue
+            except ServerBusy:                        # another photo is being analysed: drop this frame
+                await ws.send_text(json.dumps({"error": warmup.BUSY_MSG}))
                 continue
             except Exception:
                 ctx.metrics.record_error()

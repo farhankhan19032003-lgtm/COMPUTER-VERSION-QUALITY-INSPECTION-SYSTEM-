@@ -34,9 +34,10 @@ class Settings(BaseSettings):
     # scored 6 to 9 against a bank built from drawings; a same-rig defect scores a few), so it is not damage evidence.
     require_bank_for_fail: bool = True
     anomaly_trust_ratio: float = 6.5
-    # CPU limits for small hosts (see app/utils.py InferenceGate). 0 threads = 2 (or fewer cores).
+    # CPU limits for small hosts (see app/utils.py). 0 = automatic from the container's CPU quota.
     torch_threads: int = 0
-    max_concurrent_inference: int = 2
+    max_concurrent_inference: int = 0
+    inference_wait_seconds: float = 45.0
     # Load every model in a background thread right after start-up (the Dockerfile turns this on; tests leave it off).
     warmup: bool = False
     # Small ONNX face detector (OpenCV YuNet) so close-up faces count as a person. Optional: missing file = skipped.
